@@ -1,3 +1,5 @@
 packages:
   - web
   - db
+allowBuilds:
+  unrs-resolver: true
