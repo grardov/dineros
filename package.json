@@ -4,7 +4,7 @@
   "packageManager": "pnpm@12.14.0",
   "scripts": {
     "dev:web": "pnpm --filter web dev",
-    "dev:core": "cd core && uv run fastapi dev",
+    "dev:core": "cd core && uv run fastapi dev --port 8100",
     "db:start": "pnpm --filter db start",
     "db:stop": "pnpm --filter db stop",
     "lint": "pnpm --filter web lint && cd core && uv run ruff check . && uv run ruff format --check .",

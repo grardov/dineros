@@ -1,12 +1,8 @@
-from fastapi.testclient import TestClient
+def test_health_check_requires_auth(client, new_user) -> None:
+    assert client.get("/utils/health-check/").status_code == 401
+    bad = {"Authorization": "Bearer not-a-jwt"}
+    assert client.get("/utils/health-check/", headers=bad).status_code == 401
 
-from app.core.config import settings
-from app.main import app
-
-client = TestClient(app)
-
-
-def test_health_check() -> None:
-    r = client.get(f"{settings.API_V1_STR}/utils/health-check/")
+    r = client.get("/utils/health-check/", headers=new_user())
     assert r.status_code == 200
     assert r.json() is True

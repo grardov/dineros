@@ -5,7 +5,10 @@ description = "Dineros backend API"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi[standard]>=0.156.3",
+    "psycopg[binary]>=3.3.6",
     "pydantic-settings>=2.16.1",
+    "pyjwt[crypto]>=2.15.1",
+    "sqlmodel>=0.0.48",
 ]
 
 [dependency-groups]
