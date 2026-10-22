@@ -119,7 +119,7 @@ export const dayMonth = (iso: string) =>
     .toLocaleDateString("es-MX", { day: "numeric", month: "short" })
     .replace(".", "");
 
-// Serif page title with an optional muted line above it and actions on the right.
+// Page title with an optional muted line above it and actions on the right.
 export function PageHeader({
   eyebrow,
   title,
@@ -133,7 +133,7 @@ export function PageHeader({
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div className="flex min-w-0 flex-col gap-1">
         {eyebrow && <span className="text-[0.8125rem] text-muted-foreground">{eyebrow}</span>}
-        <h1 className="text-[28px] leading-tight font-medium tracking-tight md:text-[30px]">
+        <h1 className="text-[26px] leading-tight font-semibold tracking-tight md:text-[28px]">
           {title}
         </h1>
       </div>
@@ -190,7 +190,7 @@ export function EmptyState({
         <Icon className="size-6" />
       </span>
       <div className="flex max-w-sm flex-col gap-1">
-        <p className="font-heading text-lg font-medium">{title}</p>
+        <p className="font-heading text-lg leading-tight font-semibold tracking-tight">{title}</p>
         {children && <p className="text-sm text-muted-foreground">{children}</p>}
       </div>
       {action && <div className="mt-1 flex flex-wrap justify-center gap-2">{action}</div>}

@@ -158,7 +158,7 @@ export default function AccountsPage() {
         return (
           <section key={title} className="flex flex-col gap-2.5">
             <div className="flex items-baseline justify-between">
-              <h2 className="text-lg font-medium">
+              <h2 className="text-base leading-tight font-semibold tracking-tight">
                 {title}{" "}
                 <span className="font-sans text-[0.8125rem] font-normal text-subtle">
                   {group.length}

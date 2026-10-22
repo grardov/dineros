@@ -9,7 +9,7 @@ export function Logo() {
         <rect x="164" y="228" width="232" height="56" rx="28" fill="#fff" />
         <rect x="116" y="144" width="232" height="56" rx="28" fill="#9fd8c4" />
       </svg>
-      <span className="font-heading text-[21px] leading-none font-medium tracking-tight">
+      <span className="font-heading text-[19px] leading-none font-semibold tracking-tight">
         Dineros
       </span>
     </Link>
