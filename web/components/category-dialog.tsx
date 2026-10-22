@@ -1,18 +1,25 @@
 "use client";
 
+import { InfoIcon, SmilePlusIcon } from "lucide-react";
 import { useState } from "react";
 
+import { useCategory } from "@/components/category-icon";
 import { FormDialog, text } from "@/components/form-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  EmojiPicker,
+  EmojiPickerContent,
+  EmojiPickerFooter,
+  EmojiPickerSearch,
+} from "@/components/ui/emoji-picker";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { deleteCategory, saveCategory } from "@/lib/actions";
 import { useStore } from "@/lib/store";
 import { CATEGORY_KINDS, type Category, type CategoryKind } from "@/lib/types";
-
-const EMOJIS =
-  "🛒 🍽️ 🍔 ☕ 🍺 🚌 🚕 🚗 ⛽ ✈️ 🏠 💡 💧 📱 🌐 🏥 💊 🏋️ 💇 🎓 📚 🎬 🎮 🎵 📺 🔁 👕 👟 🎁 🐶 🧸 🔧 📦 🧾 💳 🏦 💼 💰 📈 ↩️".split(
-    " ",
-  );
 
 export function CategoryDialog({
   category,
@@ -28,6 +35,10 @@ export function CategoryDialog({
   const store = useStore();
   const [kind, setKind] = useState(category?.kind ?? initialKind);
   const [icon, setIcon] = useState(category?.icon ?? "");
+  const [picking, setPicking] = useState(false);
+  const [parentId, setParentId] = useState(category?.parent_id ?? "");
+  // The preview takes the hue the category will have: its parent's, or its own.
+  const { tone } = useCategory(parentId || category?.id || null);
   // One level of nesting: a category with subcategories stays top-level.
   const hasChildren = store.categories.some((c) => c.parent_id === category?.id);
   const parents = store.categories.filter(
@@ -39,10 +50,10 @@ export function CategoryDialog({
       open={open}
       onClose={onClose}
       title={category ? "Editar categoría" : "Nueva categoría"}
-      onDelete={category && (() => (store.deleteCategory(category.id), null))}
+      onDelete={category && (() => deleteCategory(category.id))}
       onSubmit={(d) => {
         const name = text(d, "name")!;
-        const parent_id = text(d, "parent_id");
+        const parent_id = parentId || null;
         // Mirrors unique (user_id, parent_id, name).
         if (
           store.categories.some(
@@ -50,81 +61,94 @@ export function CategoryDialog({
           )
         )
           return "Ya existe una categoría con ese nombre.";
-        store.saveCategory({
-          id: category?.id ?? store.newId(),
-          created_at: category?.created_at ?? new Date().toISOString(),
+        return saveCategory(category?.id, {
           name,
-          icon: icon.trim() || null,
+          icon: icon || null,
           kind,
           parent_id,
         });
-        return null;
       }}
     >
-      <div className="grid grid-cols-[3.5rem_1fr] gap-4">
-        <Field>
-          <FieldLabel htmlFor="icon">Ícono</FieldLabel>
-          {/* Any emoji works: pick one below or paste/type it (⌃⌘Space / Win+.) */}
-          <Input
-            id="icon"
-            value={icon}
-            maxLength={16}
-            onChange={(e) => setIcon(e.target.value)}
-            className="text-center text-lg"
-          />
-        </Field>
+      <div className="flex items-end gap-3">
+        <Popover open={picking} onOpenChange={setPicking}>
+          <PopoverTrigger
+            type="button"
+            title="Cambiar ícono"
+            aria-label={icon ? `Ícono ${icon}, cambiar` : "Elegir ícono"}
+            className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-xl text-[22px] ring-primary/40 transition-shadow outline-none hover:ring-2 focus-visible:ring-3 aria-expanded:ring-2"
+            style={{ background: tone.bg }}
+          >
+            {icon || <SmilePlusIcon className="size-5" style={{ color: tone.fg }} />}
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-auto gap-0 p-0">
+            <EmojiPicker
+              locale="es"
+              columns={9}
+              onEmojiSelect={({ emoji }) => (setIcon(emoji), setPicking(false))}
+              className="h-80"
+            >
+              <EmojiPickerSearch placeholder="Buscar emoji" autoFocus />
+              <EmojiPickerContent />
+              <EmojiPickerFooter />
+            </EmojiPicker>
+            {icon && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="m-1 mt-0 justify-start text-muted-foreground"
+                onClick={() => (setIcon(""), setPicking(false))}
+              >
+                Quitar ícono
+              </Button>
+            )}
+          </PopoverContent>
+        </Popover>
         <Field>
           <FieldLabel htmlFor="name">Nombre</FieldLabel>
           <Input id="name" name="name" required maxLength={100} defaultValue={category?.name} />
         </Field>
       </div>
-      <div className="grid grid-cols-10 gap-1" role="group" aria-label="Íconos sugeridos">
-        {EMOJIS.map((e) => (
-          <button
-            key={e}
-            type="button"
-            aria-pressed={icon === e}
-            onClick={() => setIcon(icon === e ? "" : e)}
-            className="flex aspect-square items-center justify-center rounded-md text-lg hover:bg-muted aria-pressed:bg-primary/10 aria-pressed:ring-1 aria-pressed:ring-primary"
-          >
-            {e}
-          </button>
-        ))}
-      </div>
+
       <Field>
-        <FieldLabel htmlFor="kind">Tipo</FieldLabel>
-        <NativeSelect
-          id="kind"
-          className="w-full"
-          value={kind}
-          disabled={!!category}
-          onChange={(e) => setKind(e.target.value as CategoryKind)}
-        >
-          {Object.entries(CATEGORY_KINDS).map(([value, label]) => (
-            <NativeSelectOption key={value} value={value}>
-              {label}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+        <FieldLabel>Tipo</FieldLabel>
+        <Tabs value={kind} onValueChange={(v) => (setKind(v as CategoryKind), setParentId(""))}>
+          <TabsList className="grid w-full grid-cols-2">
+            {Object.entries(CATEGORY_KINDS).map(([value, label]) => (
+              <TabsTrigger key={value} value={value} disabled={!!category}>
+                {label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
         {category && <FieldDescription>El tipo no cambia una vez creada.</FieldDescription>}
       </Field>
+
       <Field>
-        <FieldLabel htmlFor="parent_id">Dentro de</FieldLabel>
+        <FieldLabel htmlFor="parent_id">Categoría padre</FieldLabel>
         <NativeSelect
           id="parent_id"
-          name="parent_id"
           className="w-full"
           disabled={hasChildren}
-          defaultValue={category?.parent_id ?? ""}
+          value={parentId}
+          onChange={(e) => setParentId(e.target.value)}
         >
           <NativeSelectOption value="">Ninguna (principal)</NativeSelectOption>
           {parents.map((c) => (
             <NativeSelectOption key={c.id} value={c.id}>
-              {c.name}
+              {c.icon} {c.name}
             </NativeSelectOption>
           ))}
         </NativeSelect>
       </Field>
+
+      {category && (
+        <p className="flex gap-2.5 rounded-lg bg-background px-3 py-2.5 text-[0.78rem] leading-snug text-sidebar-foreground">
+          <InfoIcon className="mt-px size-4 shrink-0 text-muted-foreground" />
+          Si eliminas la categoría, sus movimientos quedan como &quot;Sin categoría&quot; y sus
+          subcategorías pasan a ser principales.
+        </p>
+      )}
     </FormDialog>
   );
 }

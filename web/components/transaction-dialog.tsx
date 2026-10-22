@@ -1,30 +1,58 @@
 "use client";
 
-import { MapPinIcon } from "lucide-react";
+import {
+  ArrowDownLeftIcon,
+  ArrowLeftRightIcon,
+  ArrowUpRightIcon,
+  InfoIcon,
+  MapPinIcon,
+  WalletIcon,
+} from "lucide-react";
 import { useState } from "react";
 
+import { AccountDialog } from "@/components/account-dialog";
+import { EmptyState } from "@/components/finance";
 import { FormDialog, num, text } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { deleteTransaction, saveTransaction } from "@/lib/actions";
 import { useStore } from "@/lib/store";
 import { TRANSACTION_KINDS, type Transaction, type TransactionKind } from "@/lib/types";
 
+const KIND_ICONS = {
+  expense: ArrowUpRightIcon,
+  income: ArrowDownLeftIcon,
+  transfer: ArrowLeftRightIcon,
+};
+const KIND_COLORS = {
+  expense: "data-active:text-expense",
+  income: "data-active:text-income",
+  transfer: "data-active:text-transfer",
+};
+
 export function TransactionDialog({
   transaction,
+  kind: initialKind = "expense",
   accountId,
+  toAccountId,
   open,
   onClose,
 }: {
   transaction?: Transaction;
-  accountId?: string; // preselected account for new transactions
+  kind?: TransactionKind;
+  accountId?: string; // preselected accounts for new transactions
+  toAccountId?: string;
   open: boolean;
   onClose: () => void;
 }) {
   const store = useStore();
-  const [kind, setKind] = useState<TransactionKind>(transaction?.kind ?? "expense");
+  const [kind, setKind] = useState<TransactionKind>(transaction?.kind ?? initialKind);
+  const [accountChoice, setAccountChoice] = useState(transaction?.account_id ?? accountId ?? "");
   const [coords, setCoords] = useState(
     transaction?.latitude != null
       ? { lat: transaction.latitude, lng: transaction.longitude! }
@@ -35,6 +63,35 @@ export function TransactionDialog({
       !a.archived_at || a.id === transaction?.account_id || a.id === transaction?.to_account_id,
   );
   const parents = store.categories.filter((c) => c.kind === kind && c.parent_id === null);
+  const currency = store.account(accountChoice)?.currency ?? "MXN";
+  const [creatingAccount, setCreatingAccount] = useState(false);
+
+  // Every movement belongs to an account, so the first one has to exist before the form.
+  if (!accounts.length) {
+    if (creatingAccount) return <AccountDialog open onClose={() => setCreatingAccount(false)} />;
+    return (
+      <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogTitle className="sr-only">Primero agrega una cuenta</DialogTitle>
+          <EmptyState
+            icon={WalletIcon}
+            title="Primero agrega una cuenta"
+            action={
+              <>
+                <Button variant="ghost" onClick={onClose}>
+                  Cancelar
+                </Button>
+                <Button onClick={() => setCreatingAccount(true)}>Agregar cuenta</Button>
+              </>
+            }
+          >
+            Cada movimiento sale de o llega a una de tus cuentas: débito, efectivo, ahorro o tarjeta
+            de crédito.
+          </EmptyState>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const accountSelect = (name: string, defaultValue?: string | null) => (
     <NativeSelect
@@ -43,6 +100,7 @@ export function TransactionDialog({
       className="w-full"
       required
       defaultValue={defaultValue ?? ""}
+      onChange={name === "account_id" ? (e) => setAccountChoice(e.target.value) : undefined}
     >
       <NativeSelectOption value="" disabled>
         Elige una cuenta
@@ -59,15 +117,22 @@ export function TransactionDialog({
     <FormDialog
       open={open}
       onClose={onClose}
-      title={transaction ? "Editar movimiento" : "Nuevo movimiento"}
-      onDelete={transaction && (() => (store.deleteTransaction(transaction.id), null))}
+      title={
+        transaction
+          ? "Editar movimiento"
+          : kind === "transfer"
+            ? "Nueva transferencia"
+            : "Nuevo movimiento"
+      }
+      submitLabel={kind === "transfer" && !transaction ? "Transferir" : "Guardar"}
+      onDelete={transaction && (() => deleteTransaction(transaction.id))}
       onSubmit={(d) => {
         const account_id = text(d, "account_id")!;
         const to_account_id = kind === "transfer" ? text(d, "to_account_id") : null;
+        if (kind === "transfer" && accounts.length < 2)
+          return "Necesitas al menos dos cuentas para transferir.";
         if (to_account_id === account_id) return "Elige dos cuentas distintas.";
-        store.saveTransaction({
-          id: transaction?.id ?? store.newId(),
-          created_at: transaction?.created_at ?? new Date().toISOString(),
+        return saveTransaction(transaction?.id, {
           kind,
           amount: num(d, "amount")!,
           occurred_on: text(d, "occurred_on")!,
@@ -88,71 +153,56 @@ export function TransactionDialog({
           latitude: coords?.lat ?? null,
           longitude: coords?.lng ?? null,
         });
-        return null;
       }}
     >
-      <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
-        {Object.entries(TRANSACTION_KINDS).map(([value, label]) => (
-          <Button
-            key={value}
-            type="button"
-            size="sm"
-            variant={kind === value ? "outline" : "ghost"}
-            onClick={() => setKind(value as TransactionKind)}
-          >
-            {label}
-          </Button>
-        ))}
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <Field>
-          <FieldLabel htmlFor="amount">Monto</FieldLabel>
-          <Input
-            id="amount"
+      <Tabs value={kind} onValueChange={(v) => setKind(v as TransactionKind)}>
+        <TabsList className="grid w-full grid-cols-3">
+          {Object.entries(TRANSACTION_KINDS).map(([value, label]) => {
+            const Icon = KIND_ICONS[value as TransactionKind];
+            return (
+              <TabsTrigger
+                key={value}
+                value={value}
+                className={`text-[0.8125rem] data-active:font-semibold ${KIND_COLORS[value as TransactionKind]}`}
+              >
+                <Icon /> {label}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
+
+      <label className="flex flex-col items-center gap-1 py-1">
+        <span className="sr-only">Monto</span>
+        <span className="flex items-baseline justify-center gap-1 tabular-nums">
+          <span className="text-[26px] font-medium text-subtle">$</span>
+          <input
             name="amount"
             type="number"
             step="0.01"
             min="0.01"
             required
             autoFocus
+            placeholder="0.00"
             defaultValue={transaction?.amount}
+            className={`field-sizing-content min-w-[4ch] [appearance:textfield] bg-transparent text-[46px] leading-none font-semibold tracking-tight outline-none placeholder:text-input [&::-webkit-inner-spin-button]:appearance-none ${
+              kind === "transfer" ? "text-transfer" : ""
+            }`}
           />
-        </Field>
-        <Field>
-          <FieldLabel htmlFor="occurred_on">Fecha</FieldLabel>
-          <Input
-            id="occurred_on"
-            name="occurred_on"
-            type="date"
-            required
-            defaultValue={transaction?.occurred_on ?? store.today}
-          />
-        </Field>
-      </div>
-      <Field>
-        <FieldLabel htmlFor="description">Descripción</FieldLabel>
-        <Input
-          id="description"
-          name="description"
-          maxLength={200}
-          defaultValue={transaction?.description ?? ""}
-        />
-      </Field>
-      <div className="grid grid-cols-2 gap-4">
+        </span>
+        <span className="text-xs text-subtle">{currency}</span>
+      </label>
+
+      <div className="grid grid-cols-2 gap-3">
         <Field>
           <FieldLabel htmlFor="account_id">{kind === "transfer" ? "Desde" : "Cuenta"}</FieldLabel>
           {accountSelect("account_id", transaction?.account_id ?? accountId)}
         </Field>
         {kind === "transfer" ? (
-          <>
-            <Field>
-              <FieldLabel htmlFor="to_account_id">Hacia</FieldLabel>
-              {accountSelect("to_account_id", transaction?.to_account_id)}
-            </Field>
-            <FieldDescription className="col-span-2">
-              Pago de tarjeta, ahorro o inversión entre tus cuentas.
-            </FieldDescription>
-          </>
+          <Field>
+            <FieldLabel htmlFor="to_account_id">Hacia</FieldLabel>
+            {accountSelect("to_account_id", transaction?.to_account_id ?? toAccountId)}
+          </Field>
         ) : (
           <Field>
             <FieldLabel htmlFor="category_id">Categoría</FieldLabel>
@@ -181,6 +231,35 @@ export function TransactionDialog({
           </Field>
         )}
       </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field>
+          <FieldLabel htmlFor="occurred_on">Fecha</FieldLabel>
+          <Input
+            id="occurred_on"
+            name="occurred_on"
+            type="date"
+            required
+            defaultValue={transaction?.occurred_on ?? store.today}
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="description">Descripción</FieldLabel>
+          <Input
+            id="description"
+            name="description"
+            maxLength={200}
+            defaultValue={transaction?.description ?? ""}
+          />
+        </Field>
+      </div>
+      {kind === "transfer" && (
+        <p className="flex gap-2.5 rounded-lg bg-background px-3 py-2.5 text-[0.78rem] leading-snug text-sidebar-foreground">
+          <InfoIcon className="mt-px size-4 shrink-0 text-muted-foreground" />
+          {accounts.length < 2
+            ? "Necesitas al menos dos cuentas para transferir. Agrega otra en Cuentas."
+            : "Las transferencias mueven dinero entre tus cuentas. No cuentan como gasto ni como ingreso."}
+        </p>
+      )}
       <Field>
         <FieldLabel htmlFor="tags">Etiquetas</FieldLabel>
         <Input
@@ -192,7 +271,7 @@ export function TransactionDialog({
         <FieldDescription>Separadas por coma.</FieldDescription>
       </Field>
       <Field>
-        <FieldLabel htmlFor="location_name">Lugar</FieldLabel>
+        <FieldLabel htmlFor="location_name">Ubicación</FieldLabel>
         <div className="flex gap-2">
           <Input
             id="location_name"
@@ -213,7 +292,7 @@ export function TransactionDialog({
                   )
             }
           >
-            <MapPinIcon />
+            <MapPinIcon className={coords ? "text-primary" : ""} />
           </Button>
         </div>
         {coords && (
@@ -224,7 +303,13 @@ export function TransactionDialog({
       </Field>
       <Field>
         <FieldLabel htmlFor="notes">Notas</FieldLabel>
-        <Textarea id="notes" name="notes" rows={2} defaultValue={transaction?.notes ?? ""} />
+        <Textarea
+          id="notes"
+          name="notes"
+          rows={2}
+          placeholder="Opcional"
+          defaultValue={transaction?.notes ?? ""}
+        />
       </Field>
     </FormDialog>
   );

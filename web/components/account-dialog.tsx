@@ -6,7 +6,7 @@ import { FormDialog, num, text } from "@/components/form-dialog";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { useStore } from "@/lib/store";
+import { deleteAccount, saveAccount } from "@/lib/actions";
 import { ACCOUNT_TYPES, type Account, type AccountType } from "@/lib/types";
 
 export function AccountDialog({
@@ -18,7 +18,6 @@ export function AccountDialog({
   open: boolean;
   onClose: () => void;
 }) {
-  const store = useStore();
   const [type, setType] = useState<AccountType>(account?.type ?? "debit");
   const credit = type === "credit";
 
@@ -27,12 +26,10 @@ export function AccountDialog({
       open={open}
       onClose={onClose}
       title={account ? "Editar cuenta" : "Nueva cuenta"}
-      onDelete={account && (() => store.deleteAccount(account.id))}
+      onDelete={account && (() => deleteAccount(account.id))}
       onSubmit={(d) => {
         const opening = num(d, "opening_balance") ?? 0;
-        store.saveAccount({
-          id: account?.id ?? store.newId(),
-          created_at: account?.created_at ?? new Date().toISOString(),
+        return saveAccount(account?.id, {
           archived_at: account?.archived_at ?? null,
           name: text(d, "name")!,
           type,
@@ -44,7 +41,6 @@ export function AccountDialog({
           statement_day: credit ? num(d, "statement_day") : null,
           payment_due_day: credit ? num(d, "payment_due_day") : null,
         });
-        return null;
       }}
     >
       <Field>

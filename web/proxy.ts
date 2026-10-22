@@ -25,6 +25,8 @@ export async function proxy(request: NextRequest) {
   // Pin the issuer like core does: every local Supabase stack shares the same default signing
   // key, so a session cookie from another local project would otherwise pass.
   const signedIn = data?.claims.iss === `${process.env.SUPABASE_URL}/auth/v1`;
+  // Email links (/auth/confirm) must work whether or not someone is already signed in.
+  if (request.nextUrl.pathname.startsWith("/auth/")) return response;
   const onLogin = request.nextUrl.pathname.startsWith("/login");
   if (!signedIn && !onLogin) return NextResponse.redirect(new URL("/login", request.url));
   if (signedIn && onLogin) return NextResponse.redirect(new URL("/", request.url));
@@ -32,5 +34,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|icon.svg|apple-icon.png).*)"],
 };

@@ -1,5 +1,5 @@
-// Mirrors of core/app/models.py. Money is a number here; core sends Decimal as a string, so parse
-// it at the api() boundary when this gets wired.
+// Mirrors of core/app/models.py. Money is a number here; core sends Decimal as a string, which
+// lib/data.ts parses.
 
 export type AccountType = "debit" | "credit" | "cash" | "savings" | "investment";
 export type CategoryKind = "expense" | "income";
@@ -22,7 +22,7 @@ export type Account = {
 export type Category = {
   id: string;
   name: string;
-  icon: string | null; // emoji; UI-only for now, needs a column in db + core
+  icon: string | null; // an emoji
   kind: CategoryKind;
   parent_id: string | null;
   created_at: string;
@@ -79,6 +79,14 @@ export const CATEGORY_KINDS: Record<CategoryKind, string> = {
 export function money(amount: number, currency = "MXN") {
   // `|| 0` turns -0 into 0, so sums of nothing don't print "-$0.00".
   return (amount || 0).toLocaleString("es-MX", { style: "currency", currency });
+}
+
+export const MINUS = "\u2212";
+
+// Typographic minus for negatives; "+" only where asked (income in lists).
+export function signedMoney(amount: number, currency = "MXN", plus = true) {
+  const sign = amount < 0 ? MINUS : plus && amount > 0 ? "+" : "";
+  return sign + money(Math.abs(amount), currency);
 }
 
 export function shortDate(iso: string) {

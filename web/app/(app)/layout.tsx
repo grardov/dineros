@@ -1,62 +1,53 @@
-import { LogOutIcon } from "lucide-react";
-import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
-import { NavLinks } from "@/components/nav-links";
-import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/logo";
+import { MobileNav, NavLinks } from "@/components/nav-links";
+import { UserMenu } from "@/components/user-menu";
+import { loadData } from "@/lib/data";
 import { StoreProvider } from "@/lib/store";
 import { createClient } from "@/lib/supabase";
 
-import { signOut } from "../login/actions";
-
-async function UserEmail() {
+async function User({ compact }: { compact?: boolean }) {
   // supabase-js reads Date.now() while building the client; keep it out of the prerender.
   await connection();
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
-  return <>{data?.claims.email}</>;
+  return <UserMenu email={data?.claims.email ?? ""} compact={compact} />;
 }
 
-function SignOut() {
-  return (
-    <form action={signOut}>
-      <Button type="submit" variant="ghost" size="sm">
-        <LogOutIcon /> Salir
-      </Button>
-    </form>
-  );
+async function Data({ children }: { children: React.ReactNode }) {
+  return <StoreProvider data={await loadData()}>{children}</StoreProvider>;
 }
 
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex flex-1 flex-col md:flex-row">
-      <aside className="flex flex-col gap-3 border-b bg-sidebar p-3 text-sidebar-foreground md:sticky md:top-0 md:h-svh md:w-56 md:shrink-0 md:border-r md:border-b-0">
-        <div className="flex items-center justify-between px-2 md:py-2">
-          <Link href="/" className="font-semibold">
-            Dineros
-          </Link>
-          <div className="md:hidden">
-            <SignOut />
-          </div>
-        </div>
+      <aside className="hidden flex-col gap-7 border-r bg-sidebar px-3 pt-5.5 pb-4 md:sticky md:top-0 md:flex md:h-svh md:w-56 md:shrink-0">
+        <Logo />
         {/* usePathname on /cuentas/[id] is only known at request time */}
         <Suspense>
           <NavLinks />
         </Suspense>
-        <div className="mt-auto hidden flex-col items-start gap-1 border-t pt-3 md:flex">
-          <span className="truncate px-2 text-xs text-muted-foreground">
-            <Suspense>
-              <UserEmail />
-            </Suspense>
-          </span>
-          <SignOut />
+        <div className="mt-auto border-t pt-2">
+          <Suspense>
+            <User />
+          </Suspense>
         </div>
       </aside>
-      <main className="mx-auto flex w-full max-w-5xl min-w-0 flex-1 flex-col gap-6 p-4 md:p-8">
-        {/* The mock store reads today's date, so it renders at request time, not in the shell. */}
+      <header className="flex items-center justify-between px-4 pt-3 md:hidden">
+        <Logo />
+        <Suspense>
+          <User compact />
+        </Suspense>
+      </header>
+      <main className="mx-auto flex w-full max-w-6xl min-w-0 flex-1 flex-col gap-5 px-4 pt-4 pb-28 md:px-8 md:py-7">
+        {/* The user's data loads at request time, so it streams in after the shell. */}
         <Suspense fallback={<p className="text-sm text-muted-foreground">Cargando…</p>}>
-          <StoreProvider>{children}</StoreProvider>
+          <Data>
+            {children}
+            <MobileNav />
+          </Data>
         </Suspense>
       </main>
     </div>
