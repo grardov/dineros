@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowLeftRightIcon, HouseIcon, PlusIcon, TagsIcon, WalletIcon } from "lucide-react";
+import {
+  ArrowLeftRightIcon,
+  HouseIcon,
+  PlusIcon,
+  RepeatIcon,
+  TagsIcon,
+  WalletIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -9,9 +16,12 @@ import { NewTransactionButton } from "@/components/transaction-list";
 const LINKS = [
   { href: "/", label: "Resumen", icon: HouseIcon },
   { href: "/transactions", label: "Movimientos", icon: ArrowLeftRightIcon },
+  { href: "/recurring", label: "Fijos", icon: RepeatIcon },
   { href: "/accounts", label: "Cuentas", icon: WalletIcon },
   { href: "/categories", label: "Categorías", icon: TagsIcon },
 ];
+// The phone tab bar fits four around "+"; Categorías stays in the sidebar and on Resumen.
+const MOBILE = LINKS.filter((l) => l.href !== "/categories");
 
 const isActive = (href: string, pathname: string) =>
   href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -59,7 +69,7 @@ export function MobileNav() {
   );
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 items-start border-t bg-card px-1 pt-2.5 pb-[max(env(safe-area-inset-bottom),12px)] md:hidden">
-      {LINKS.slice(0, 2).map(tab)}
+      {MOBILE.slice(0, 2).map(tab)}
       <div className="flex justify-center">
         <NewTransactionButton
           size="icon"
@@ -69,7 +79,7 @@ export function MobileNav() {
           <PlusIcon className="size-6" />
         </NewTransactionButton>
       </div>
-      {LINKS.slice(2).map(tab)}
+      {MOBILE.slice(2).map(tab)}
     </nav>
   );
 }

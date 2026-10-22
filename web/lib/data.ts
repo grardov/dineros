@@ -3,7 +3,14 @@ import "server-only";
 import { connection } from "next/server";
 
 import { api } from "@/lib/api";
-import type { Account, Category, CreditCardStatement, Transaction } from "@/lib/types";
+import type {
+  Account,
+  Category,
+  CreditCardStatement,
+  Recurring,
+  RecurringOccurrence,
+  Transaction,
+} from "@/lib/types";
 
 // core sends Decimal as a string; these are the money fields to turn into numbers.
 type Wire<T, K extends keyof T> = Omit<T, K> & Record<K, string | null>;
@@ -20,13 +27,15 @@ type Balance = { account_id: string; balance: number; available_credit: number |
 export async function loadData() {
   // supabase-js reads Date.now() while building the client; keep it out of the prerender.
   await connection();
-  const [accounts, categories, transactions, balances] = await Promise.all([
+  const [accounts, categories, transactions, balances, recurring, occurrences] = await Promise.all([
     api<Wire<Account, "opening_balance" | "last_statement_pending" | "credit_limit">[]>(
       "/accounts/?include_archived=true",
     ),
     api<Category[]>("/categories/"),
     api<Wire<Transaction, "amount">[]>("/transactions/?limit=500"),
     api<Wire<Balance, "balance" | "available_credit">[]>("/accounts/balances/"),
+    api<Wire<Recurring, "amount">[]>("/recurring/"),
+    api<Wire<RecurringOccurrence, "expected_amount" | "paid_amount">[]>("/recurring/occurrences/"),
   ]);
   const credit = accounts.filter((a) => a.type === "credit");
   const statements = await Promise.all(
@@ -43,6 +52,8 @@ export async function loadData() {
     ),
     categories,
     transactions: transactions.map((t) => toNumbers(t, ["amount"])),
+    recurring: recurring.map((r) => toNumbers(r, ["amount"])),
+    occurrences: occurrences.map((o) => toNumbers(o, ["expected_amount", "paid_amount"])), // by due date
     balances: Object.fromEntries(
       balances.map((b) => [b.account_id, toNumbers(b, ["balance", "available_credit"])]),
     ),

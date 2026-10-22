@@ -43,7 +43,47 @@ export type Transaction = {
   location_name: string | null;
   latitude: number | null;
   longitude: number | null;
+  recurring_id: string | null; // registered from this fijo…
+  recurring_period: string | null; // …for this month (its first day)
   created_at: string;
+};
+
+// A "fijo". amount is null only for a credit card payment, which takes the statement due.
+export type Recurring = {
+  id: string;
+  name: string;
+  kind: TransactionKind;
+  amount: number | null;
+  is_variable: boolean;
+  account_id: string;
+  to_account_id: string | null;
+  category_id: string | null;
+  day_of_month: number;
+  every_months: number;
+  starts_on: string;
+  ends_on: string | null;
+  paused_at: string | null;
+  created_at: string;
+};
+
+// What a fijo expects in a month (this one or the next), from recurring_occurrences.
+export type RecurringOccurrence = {
+  recurring_id: string;
+  month: string; // YYYY-MM-01
+  due_on: string;
+  expected_amount: number;
+  is_estimate: boolean;
+  paid_amount: number;
+  status: "paid" | "overdue" | "pending";
+};
+
+export const FREQUENCIES: Record<number, string> = {
+  1: "Mensual",
+  2: "Bimestral",
+  3: "Trimestral",
+  4: "Cuatrimestral",
+  6: "Semestral",
+  12: "Anual",
 };
 
 export type CreditCardStatement = {

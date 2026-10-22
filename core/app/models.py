@@ -84,10 +84,38 @@ class TransactionCreate(SQLModel):
     location_name: str | None = Field(default=None, max_length=200)
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = Field(default=None, ge=-180, le=180)
+    # Registered from a fijo: which one, and the month it pays (its first day).
+    recurring_id: uuid.UUID | None = None
+    recurring_period: date | None = None
 
 
 class Transaction(TransactionCreate, table=True):
     __tablename__ = "transactions"
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID
+    created_at: datetime = Field(default_factory=_now)
+
+
+class RecurringCreate(SQLModel):
+    """A "fijo": recurring income, expense or transfer. amount is None only for a credit card
+    payment, which takes the statement due that month."""
+
+    name: str = Field(min_length=1, max_length=100)
+    kind: TransactionKind
+    amount: Decimal | None = Field(default=None, gt=0, max_digits=14, decimal_places=2)
+    is_variable: bool = False
+    account_id: uuid.UUID
+    to_account_id: uuid.UUID | None = None
+    category_id: uuid.UUID | None = None
+    day_of_month: int = Field(ge=1, le=31)
+    every_months: int = Field(default=1, ge=1, le=12)
+    starts_on: date
+    ends_on: date | None = None
+    paused_at: datetime | None = None
+
+
+class Recurring(RecurringCreate, table=True):
+    __tablename__ = "recurring"
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID
     created_at: datetime = Field(default_factory=_now)
@@ -114,3 +142,14 @@ class CreditCardStatement(SQLModel, table=True):
     statement_balance: Decimal
     payments: Decimal
     pending: Decimal
+
+
+class RecurringOccurrence(SQLModel, table=True):
+    __tablename__ = "recurring_occurrences"
+    recurring_id: uuid.UUID = Field(primary_key=True)
+    month: date = Field(primary_key=True)
+    due_on: date
+    expected_amount: Decimal
+    is_estimate: bool
+    paid_amount: Decimal
+    status: str  # paid | overdue | pending

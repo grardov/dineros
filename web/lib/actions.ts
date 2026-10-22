@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { api, ApiError } from "@/lib/api";
-import type { Account, Category, Transaction } from "@/lib/types";
+import type { Account, Category, Recurring, Transaction } from "@/lib/types";
 
 // Writes go through core; on success the router refreshes so the store reloads.
 // They return an error message for the dialog, or null.
@@ -62,4 +62,13 @@ export async function saveTransaction(id: string | undefined, body: Input<Transa
 
 export async function deleteTransaction(id: string) {
   return write(`/transactions/${id}`, { method: "DELETE" });
+}
+
+export async function saveRecurring(id: string | undefined, body: Input<Recurring>) {
+  return save("recurring", id, body);
+}
+
+// Its transactions stay, just no longer linked.
+export async function deleteRecurring(id: string) {
+  return write(`/recurring/${id}`, { method: "DELETE" });
 }

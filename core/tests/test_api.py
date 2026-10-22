@@ -167,3 +167,76 @@ def test_card_added_after_its_corte(client, new_user) -> None:
     }
     assert client.post("/transactions/", headers=h, json=payment).status_code == 201
     assert statements()[str(corte)]["pending"] == "0.00"
+
+
+def test_recurring(client, new_user) -> None:
+    """Fijos project this month and next; a linked transaction marks a month as paid."""
+    h, other = new_user(), new_user()
+    this_month = date.today().replace(day=1)
+    next_month = (this_month + timedelta(days=32)).replace(day=1)
+    two_ago = (this_month - timedelta(days=32)).replace(day=1)
+    last_month = (this_month - timedelta(days=1)).replace(day=1)
+    debit = client.post(
+        "/accounts/",
+        headers=h,
+        json={"name": "Nómina", "type": "debit", "opening_balance": "90000"},
+    ).json()
+    corte = date.today() - timedelta(days=3)
+    card = client.post(
+        "/accounts/",
+        headers=h,
+        json={
+            "name": "AMEX",
+            "type": "credit",
+            "opening_balance": "-9978.87",
+            "last_statement_pending": "8403.06",
+            "statement_day": corte.day,
+            "payment_due_day": corte.day,
+        },
+    ).json()
+
+    def fijo(**body):
+        base = {"account_id": debit["id"], "day_of_month": 1, "starts_on": str(two_ago)}
+        r = client.post("/recurring/", headers=h, json=base | body)
+        assert r.status_code == 201, r.text
+        return r.json()
+
+    rent = fijo(name="Renta", kind="expense", amount="9500")
+    luz = fijo(name="Luz", kind="expense", amount="600", is_variable=True)
+    amex = fijo(name="Pago AMEX", kind="transfer", to_account_id=card["id"], day_of_month=corte.day)
+    # Only a card payment can leave the amount out.
+    no_amount = {"name": "?", "kind": "expense", "account_id": debit["id"], "day_of_month": 1}
+    assert (
+        client.post(
+            "/recurring/", headers=h, json=no_amount | {"starts_on": str(this_month)}
+        ).status_code
+        == 409
+    )
+
+    def pay(r, amount, month):
+        tx = {
+            "kind": r["kind"],
+            "amount": amount,
+            "occurred_on": str(month),
+            "account_id": debit["id"],
+            "recurring_id": r["id"],
+            "recurring_period": str(month),
+        }
+        assert client.post("/transactions/", headers=h, json=tx).status_code == 201
+
+    pay(rent, "9500", this_month)
+    pay(luz, "800", two_ago)
+    pay(luz, "1000", last_month)
+
+    occurrences = client.get("/recurring/occurrences/", headers=h).json()
+    by = {(o["recurring_id"], o["month"]): o for o in occurrences}
+    assert by[(rent["id"], str(this_month))]["status"] == "paid"
+    assert by[(rent["id"], str(next_month))]["status"] == "pending"
+    # Variable: the average of its last paid months.
+    assert by[(luz["id"], str(next_month))]["expected_amount"] == "900.00"
+    assert by[(luz["id"], str(next_month))]["is_estimate"]
+    # Card payment: the statement due next month, i.e. what's left of the last corte.
+    assert by[(amex["id"], str(next_month))]["expected_amount"] == "8403.06"
+
+    assert client.get("/recurring/", headers=other).json() == []
+    assert client.get("/recurring/occurrences/", headers=other).json() == []

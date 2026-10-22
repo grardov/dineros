@@ -18,11 +18,14 @@ function useStoreValue(data: StoreData) {
       accounts: data.accounts,
       categories: data.categories,
       transactions: data.transactions, // newest first
+      recurring: data.recurring,
+      occurrences: data.occurrences, // this month and next, by due date
       today,
       balance: (id: string) => data.balances[id]?.balance ?? 0,
       statements: (a: { id: string }) => data.statements[a.id] ?? [], // newest corte first
       account: (id: string | null) => data.accounts.find((a) => a.id === id),
       category: (id: string | null) => data.categories.find((c) => c.id === id),
+      fijo: (id: string | null) => data.recurring.find((r) => r.id === id),
     }),
     [data, today],
   );

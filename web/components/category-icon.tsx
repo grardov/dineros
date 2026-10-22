@@ -62,7 +62,7 @@ export function TransactionIcon({
   transaction,
   className,
 }: {
-  transaction: Transaction;
+  transaction: Pick<Transaction, "kind" | "category_id">;
   className?: string;
 }) {
   if (transaction.kind === "transfer")

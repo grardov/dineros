@@ -35,8 +35,73 @@ const KIND_COLORS = {
   transfer: "data-active:text-transfer",
 };
 
+// Gasto / Ingreso / Transferencia, shared with the fijo dialog.
+export function KindTabs({
+  kind,
+  onChange,
+}: {
+  kind: TransactionKind;
+  onChange: (kind: TransactionKind) => void;
+}) {
+  return (
+    <Tabs value={kind} onValueChange={(v) => onChange(v as TransactionKind)}>
+      <TabsList className="grid w-full grid-cols-3">
+        {Object.entries(TRANSACTION_KINDS).map(([value, label]) => {
+          const Icon = KIND_ICONS[value as TransactionKind];
+          return (
+            <TabsTrigger
+              key={value}
+              value={value}
+              className={`text-[0.8125rem] data-active:font-semibold ${KIND_COLORS[value as TransactionKind]}`}
+            >
+              <Icon /> {label}
+            </TabsTrigger>
+          );
+        })}
+      </TabsList>
+    </Tabs>
+  );
+}
+
+// The kind's categories with their subcategories indented under them.
+export function CategorySelect({
+  kind,
+  defaultValue,
+}: {
+  kind: TransactionKind;
+  defaultValue?: string | null;
+}) {
+  const store = useStore();
+  const parents = store.categories.filter((c) => c.kind === kind && c.parent_id === null);
+  return (
+    // keyed by kind: the options change, so reset the selection
+    <NativeSelect
+      key={kind}
+      id="category_id"
+      name="category_id"
+      className="w-full"
+      defaultValue={defaultValue ?? ""}
+    >
+      <NativeSelectOption value="">Sin categoría</NativeSelectOption>
+      {parents.flatMap((p) => [
+        <NativeSelectOption key={p.id} value={p.id}>
+          {p.icon} {p.name}
+        </NativeSelectOption>,
+        ...store.categories
+          .filter((c) => c.parent_id === p.id)
+          .map((c) => (
+            <NativeSelectOption key={c.id} value={c.id}>
+              {"   "}↳ {c.icon ?? p.icon} {c.name}
+            </NativeSelectOption>
+          )),
+      ])}
+    </NativeSelect>
+  );
+}
+
 export function TransactionDialog({
   transaction,
+  preset,
   kind: initialKind = "expense",
   accountId,
   toAccountId,
@@ -44,6 +109,8 @@ export function TransactionDialog({
   onClose,
 }: {
   transaction?: Transaction;
+  // Values for a new transaction, e.g. one registered from a fijo (with its recurring link).
+  preset?: Partial<Transaction>;
   kind?: TransactionKind;
   accountId?: string; // preselected accounts for new transactions
   toAccountId?: string;
@@ -51,18 +118,17 @@ export function TransactionDialog({
   onClose: () => void;
 }) {
   const store = useStore();
-  const [kind, setKind] = useState<TransactionKind>(transaction?.kind ?? initialKind);
-  const [accountChoice, setAccountChoice] = useState(transaction?.account_id ?? accountId ?? "");
+  // What the form starts with: the transaction being edited, or a preset for a new one.
+  const initial: Partial<Transaction> | undefined = transaction ?? preset;
+  const [kind, setKind] = useState<TransactionKind>(initial?.kind ?? initialKind);
+  const [accountChoice, setAccountChoice] = useState(initial?.account_id ?? accountId ?? "");
   const [coords, setCoords] = useState(
-    transaction?.latitude != null
-      ? { lat: transaction.latitude, lng: transaction.longitude! }
-      : null,
+    initial?.latitude != null ? { lat: initial.latitude, lng: initial.longitude! } : null,
   );
   const accounts = store.accounts.filter(
     (a) =>
       !a.archived_at || a.id === transaction?.account_id || a.id === transaction?.to_account_id,
   );
-  const parents = store.categories.filter((c) => c.kind === kind && c.parent_id === null);
   const currency = store.account(accountChoice)?.currency ?? "MXN";
   const [creatingAccount, setCreatingAccount] = useState(false);
 
@@ -120,9 +186,11 @@ export function TransactionDialog({
       title={
         transaction
           ? "Editar movimiento"
-          : kind === "transfer"
-            ? "Nueva transferencia"
-            : "Nuevo movimiento"
+          : initial?.recurring_id
+            ? "Registrar pago"
+            : kind === "transfer"
+              ? "Nueva transferencia"
+              : "Nuevo movimiento"
       }
       submitLabel={kind === "transfer" && !transaction ? "Transferir" : "Guardar"}
       onDelete={transaction && (() => deleteTransaction(transaction.id))}
@@ -133,6 +201,8 @@ export function TransactionDialog({
           return "Necesitas al menos dos cuentas para transferir.";
         if (to_account_id === account_id) return "Elige dos cuentas distintas.";
         return saveTransaction(transaction?.id, {
+          recurring_id: initial?.recurring_id ?? null,
+          recurring_period: initial?.recurring_period ?? null,
           kind,
           amount: num(d, "amount")!,
           occurred_on: text(d, "occurred_on")!,
@@ -155,22 +225,7 @@ export function TransactionDialog({
         });
       }}
     >
-      <Tabs value={kind} onValueChange={(v) => setKind(v as TransactionKind)}>
-        <TabsList className="grid w-full grid-cols-3">
-          {Object.entries(TRANSACTION_KINDS).map(([value, label]) => {
-            const Icon = KIND_ICONS[value as TransactionKind];
-            return (
-              <TabsTrigger
-                key={value}
-                value={value}
-                className={`text-[0.8125rem] data-active:font-semibold ${KIND_COLORS[value as TransactionKind]}`}
-              >
-                <Icon /> {label}
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-      </Tabs>
+      <KindTabs kind={kind} onChange={setKind} />
 
       <label className="flex flex-col items-center gap-1 py-1">
         <span className="sr-only">Monto</span>
@@ -184,7 +239,7 @@ export function TransactionDialog({
             required
             autoFocus
             placeholder="0.00"
-            defaultValue={transaction?.amount}
+            defaultValue={initial?.amount}
             className={`field-sizing-content min-w-[4ch] [appearance:textfield] bg-transparent text-[46px] leading-none font-semibold tracking-tight outline-none placeholder:text-input [&::-webkit-inner-spin-button]:appearance-none ${
               kind === "transfer" ? "text-transfer" : ""
             }`}
@@ -196,38 +251,20 @@ export function TransactionDialog({
       <div className="grid grid-cols-2 gap-3">
         <Field>
           <FieldLabel htmlFor="account_id">{kind === "transfer" ? "Desde" : "Cuenta"}</FieldLabel>
-          {accountSelect("account_id", transaction?.account_id ?? accountId)}
+          {accountSelect("account_id", initial?.account_id ?? accountId)}
         </Field>
         {kind === "transfer" ? (
           <Field>
             <FieldLabel htmlFor="to_account_id">Hacia</FieldLabel>
-            {accountSelect("to_account_id", transaction?.to_account_id ?? toAccountId)}
+            {accountSelect("to_account_id", initial?.to_account_id ?? toAccountId)}
           </Field>
         ) : (
           <Field>
             <FieldLabel htmlFor="category_id">Categoría</FieldLabel>
-            {/* keyed by kind: the options change, so reset the selection */}
-            <NativeSelect
-              key={kind}
-              id="category_id"
-              name="category_id"
-              className="w-full"
-              defaultValue={transaction?.kind === kind ? (transaction.category_id ?? "") : ""}
-            >
-              <NativeSelectOption value="">Sin categoría</NativeSelectOption>
-              {parents.flatMap((p) => [
-                <NativeSelectOption key={p.id} value={p.id}>
-                  {p.icon} {p.name}
-                </NativeSelectOption>,
-                ...store.categories
-                  .filter((c) => c.parent_id === p.id)
-                  .map((c) => (
-                    <NativeSelectOption key={c.id} value={c.id}>
-                      {"   "}↳ {c.icon ?? p.icon} {c.name}
-                    </NativeSelectOption>
-                  )),
-              ])}
-            </NativeSelect>
+            <CategorySelect
+              kind={kind}
+              defaultValue={initial?.kind === kind ? initial.category_id : null}
+            />
           </Field>
         )}
       </div>
@@ -239,7 +276,7 @@ export function TransactionDialog({
             name="occurred_on"
             type="date"
             required
-            defaultValue={transaction?.occurred_on ?? store.today}
+            defaultValue={initial?.occurred_on ?? store.today}
           />
         </Field>
         <Field>
@@ -248,7 +285,7 @@ export function TransactionDialog({
             id="description"
             name="description"
             maxLength={200}
-            defaultValue={transaction?.description ?? ""}
+            defaultValue={initial?.description ?? ""}
           />
         </Field>
       </div>
@@ -266,7 +303,7 @@ export function TransactionDialog({
           id="tags"
           name="tags"
           placeholder="vacaciones, pareja"
-          defaultValue={transaction?.tags.join(", ")}
+          defaultValue={initial?.tags?.join(", ")}
         />
         <FieldDescription>Separadas por coma.</FieldDescription>
       </Field>
@@ -277,7 +314,7 @@ export function TransactionDialog({
             id="location_name"
             name="location_name"
             maxLength={200}
-            defaultValue={transaction?.location_name ?? ""}
+            defaultValue={initial?.location_name ?? ""}
           />
           <Button
             type="button"
@@ -308,7 +345,7 @@ export function TransactionDialog({
           name="notes"
           rows={2}
           placeholder="Opcional"
-          defaultValue={transaction?.notes ?? ""}
+          defaultValue={initial?.notes ?? ""}
         />
       </Field>
     </FormDialog>

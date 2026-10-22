@@ -22,28 +22,18 @@ import {
   PageHeader,
   Stat,
   UtilizationBar,
+  capitalize,
   dayMonth,
+  monthName,
+  shiftMonth,
   useCredit,
 } from "@/components/finance";
+import { FijosCard } from "@/components/recurring";
 import { NewTransactionButton, TransactionRows } from "@/components/transaction-list";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
 import { ACCOUNT_TYPES, type Account, money, signedMoney } from "@/lib/types";
-
-const capitalize = (s: string) => s[0].toUpperCase() + s.slice(1);
-const monthName = (ym: string, year = true) =>
-  capitalize(
-    new Date(`${ym}-01T00:00:00`).toLocaleDateString("es-MX", {
-      month: "long",
-      ...(year && { year: "numeric" }),
-    }),
-  );
-const shiftMonth = (ym: string, by: number) => {
-  const d = new Date(`${ym}-01T00:00:00`);
-  d.setMonth(d.getMonth() + by);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-};
 
 // "+3.2% vs septiembre"; for spending, going down is the good direction.
 function Delta({
@@ -344,6 +334,7 @@ export default function Home() {
               )}
             </CardContent>
           </Card>
+          <FijosCard />
           <Card className="gap-2">
             <CardHeader className="flex items-center justify-between">
               <CardTitle>Cuentas</CardTitle>

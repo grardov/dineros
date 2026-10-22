@@ -114,6 +114,23 @@ export function useCredit(account: Account) {
   };
 }
 
+export const capitalize = (s: string) => s[0].toUpperCase() + s.slice(1);
+
+// "2026-10" → "Octubre de 2026" (or "Octubre").
+export const monthName = (ym: string, year = true) =>
+  capitalize(
+    new Date(`${ym.slice(0, 7)}-01T00:00:00`).toLocaleDateString("es-MX", {
+      month: "long",
+      ...(year && { year: "numeric" }),
+    }),
+  );
+
+export const shiftMonth = (ym: string, by: number) => {
+  const d = new Date(`${ym.slice(0, 7)}-01T00:00:00`);
+  d.setMonth(d.getMonth() + by);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+
 export const dayMonth = (iso: string) =>
   new Date(`${iso}T00:00:00`)
     .toLocaleDateString("es-MX", { day: "numeric", month: "short" })
