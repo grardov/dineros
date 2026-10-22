@@ -28,6 +28,11 @@ class AccountCreate(SQLModel):
     institution: str | None = Field(default=None, max_length=100)
     currency: str = Field(default="MXN", min_length=3, max_length=3)
     opening_balance: Decimal = Field(default=Decimal(0), max_digits=14, decimal_places=2)
+    # Credit cards added mid-period: what's left to pay of the last corte; the rest of the opening
+    # debt counts as charges of the current period.
+    last_statement_pending: Decimal | None = Field(
+        default=None, ge=0, max_digits=14, decimal_places=2
+    )
     credit_limit: Decimal | None = Field(default=None, gt=0, max_digits=14, decimal_places=2)
     statement_day: int | None = Field(default=None, ge=1, le=31)
     payment_due_day: int | None = Field(default=None, ge=1, le=31)

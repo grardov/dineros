@@ -12,6 +12,7 @@ export type Account = {
   institution: string | null;
   currency: string;
   opening_balance: number;
+  last_statement_pending: number | null; // credit cards added mid-period
   credit_limit: number | null;
   statement_day: number | null;
   payment_due_day: number | null;

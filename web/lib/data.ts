@@ -21,7 +21,9 @@ export async function loadData() {
   // supabase-js reads Date.now() while building the client; keep it out of the prerender.
   await connection();
   const [accounts, categories, transactions, balances] = await Promise.all([
-    api<Wire<Account, "opening_balance" | "credit_limit">[]>("/accounts/?include_archived=true"),
+    api<Wire<Account, "opening_balance" | "last_statement_pending" | "credit_limit">[]>(
+      "/accounts/?include_archived=true",
+    ),
     api<Category[]>("/categories/"),
     api<Wire<Transaction, "amount">[]>("/transactions/?limit=500"),
     api<Wire<Balance, "balance" | "available_credit">[]>("/accounts/balances/"),
@@ -36,7 +38,9 @@ export async function loadData() {
   );
 
   return {
-    accounts: accounts.map((a) => toNumbers(a, ["opening_balance", "credit_limit"])),
+    accounts: accounts.map((a) =>
+      toNumbers(a, ["opening_balance", "last_statement_pending", "credit_limit"]),
+    ),
     categories,
     transactions: transactions.map((t) => toNumbers(t, ["amount"])),
     balances: Object.fromEntries(

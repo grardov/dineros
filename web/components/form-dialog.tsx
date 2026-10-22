@@ -149,10 +149,12 @@ export function formatAmount(raw: string) {
 export function MoneyInput({
   defaultValue,
   currency,
+  onValue,
   ...props
 }: Omit<React.ComponentProps<typeof Input>, "type" | "value" | "defaultValue" | "onChange"> & {
   defaultValue?: number | null;
   currency?: string;
+  onValue?: (amount: number | null) => void; // the parsed amount as it's typed
 }) {
   const [value, setValue] = useState(defaultValue ? formatAmount(defaultValue.toFixed(2)) : "");
   return (
@@ -175,6 +177,7 @@ export function MoneyInput({
             .replace(/[^\d.]/g, "").length;
           const next = formatAmount(input.value);
           setValue(next);
+          onValue?.(next && next !== "." ? Number(next.replaceAll(",", "")) : null);
           requestAnimationFrame(() => {
             let at = 0;
             for (let seen = 0; at < next.length && seen < before; at++)

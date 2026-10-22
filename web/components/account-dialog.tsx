@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { deleteAccount, saveAccount } from "@/lib/actions";
 import { findInstitution, INSTITUTIONS } from "@/lib/institutions";
-import { ACCOUNT_TYPES, type Account, type AccountType } from "@/lib/types";
+import { ACCOUNT_TYPES, type Account, type AccountType, money } from "@/lib/types";
 
 const NAME_EXAMPLES: Record<AccountType, string> = {
   debit: "Ej. Nómina",
@@ -43,6 +43,9 @@ export function AccountDialog({
     account?.institution ? (findInstitution(account.institution)?.name ?? OTHER) : "",
   );
   const credit = type === "credit";
+  // Live amounts for the "Disponible" hint under the credit limit.
+  const [debt, setDebt] = useState(account ? Math.abs(account.opening_balance) : null);
+  const [limit, setLimit] = useState(account?.credit_limit ?? null);
 
   return (
     <FormDialog
@@ -53,7 +56,10 @@ export function AccountDialog({
       onSubmit={(d) => {
         const opening = num(d, "opening_balance") ?? 0;
         const limit = credit ? num(d, "credit_limit") : null;
+        const pending = credit ? num(d, "last_statement_pending") : null;
         if (limit === 0) return "El límite de crédito debe ser mayor a $0.";
+        if (pending !== null && pending > opening)
+          return "Lo que falta pagar del último corte no puede ser mayor que el saldo total.";
         return saveAccount(account?.id, {
           archived_at: account?.archived_at ?? null,
           name: text(d, "name")!,
@@ -62,6 +68,7 @@ export function AccountDialog({
           currency,
           // Credit card debt is stored negative; the form asks for it as a positive amount.
           opening_balance: credit ? -opening : opening,
+          last_statement_pending: pending,
           credit_limit: limit,
           statement_day: credit ? num(d, "statement_day") : null,
           payment_due_day: credit ? num(d, "payment_due_day") : null,
@@ -145,18 +152,36 @@ export function AccountDialog({
       </Field>
       <Field>
         <FieldLabel htmlFor="opening_balance">
-          {credit ? "Deuda inicial" : "Saldo inicial"}
+          {credit ? "Saldo total" : "Saldo inicial"}
         </FieldLabel>
         <MoneyInput
           id="opening_balance"
           name="opening_balance"
           currency={currency}
           defaultValue={account && Math.abs(account.opening_balance)}
+          onValue={setDebt}
         />
-        <FieldDescription>Antes de cualquier movimiento registrado.</FieldDescription>
+        <FieldDescription>
+          {credit
+            ? "Todo lo que debes hoy, incluidas las compras después del último corte."
+            : "Antes de cualquier movimiento registrado."}
+        </FieldDescription>
       </Field>
       {credit && (
         <>
+          <Field>
+            <FieldLabel htmlFor="last_statement_pending">Por pagar del último corte</FieldLabel>
+            <MoneyInput
+              id="last_statement_pending"
+              name="last_statement_pending"
+              currency={currency}
+              defaultValue={account?.last_statement_pending}
+            />
+            <FieldDescription>
+              Lo que te falta pagar del último estado de cuenta para no generar intereses. Si lo
+              dejas vacío, se toma el saldo total.
+            </FieldDescription>
+          </Field>
           <Field>
             <FieldLabel htmlFor="credit_limit">Límite de crédito</FieldLabel>
             <MoneyInput
@@ -164,7 +189,15 @@ export function AccountDialog({
               name="credit_limit"
               currency={currency}
               defaultValue={account?.credit_limit}
+              onValue={setLimit}
             />
+            <FieldDescription>
+              {limit
+                ? `Disponible: ${money(limit - (debt ?? 0), currency)}. `
+                : "Déjalo vacío si tu tarjeta no tiene límite fijo. "}
+              Es el límite total, no el disponible: si tu banco solo muestra el disponible, súmale
+              tu saldo total.
+            </FieldDescription>
           </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field>

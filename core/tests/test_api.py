@@ -122,3 +122,48 @@ def test_category_icons(client, new_user) -> None:
     assert created["icon"] == "☕"
     put = {"name": "Café", "kind": "expense", "icon": None}
     assert client.put(f"/categories/{created['id']}", headers=h, json=put).json()["icon"] is None
+
+
+def test_card_added_after_its_corte(client, new_user) -> None:
+    """A card added mid-period: its debt is part last corte, part charges since (the AMEX case)."""
+    h = new_user()
+    corte = date.today() - timedelta(days=3)
+    debit = client.post(
+        "/accounts/",
+        headers=h,
+        json={"name": "Nómina", "type": "debit", "opening_balance": "50000"},
+    ).json()
+    card = {
+        "name": "AMEX",
+        "type": "credit",
+        "opening_balance": "-9978.87",
+        "last_statement_pending": "8403.06",
+        "statement_day": corte.day,
+        "payment_due_day": corte.day,  # same day → due next month, after today
+    }
+    # The pending part of the last corte can't exceed the whole debt.
+    too_much = card | {"last_statement_pending": "10000"}
+    assert client.post("/accounts/", headers=h, json=too_much).status_code == 409
+    card = client.post("/accounts/", headers=h, json=card).json()
+
+    def statements():
+        rows = client.get(f"/accounts/{card['id']}/statements/", headers=h).json()
+        return {s["statement_date"]: s for s in rows}
+
+    last, current = (
+        statements()[str(corte)],
+        next(s for s in statements().values() if not s["is_closed"]),
+    )
+    assert (last["statement_balance"], last["pending"]) == ("8403.06", "8403.06")
+    assert current["charges"] == "1575.81"
+
+    # Paying what AMEX asks for settles that corte.
+    payment = {
+        "kind": "transfer",
+        "amount": "8403.06",
+        "occurred_on": str(date.today()),
+        "account_id": debit["id"],
+        "to_account_id": card["id"],
+    }
+    assert client.post("/transactions/", headers=h, json=payment).status_code == 201
+    assert statements()[str(corte)]["pending"] == "0.00"
