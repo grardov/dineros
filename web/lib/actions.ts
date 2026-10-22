@@ -45,7 +45,7 @@ export async function deleteAccount(id: string) {
     "La cuenta tiene movimientos. Archívala en su lugar.",
   );
   if (error) return error;
-  redirect("/cuentas");
+  redirect("/accounts");
 }
 
 export async function saveCategory(id: string | undefined, body: Input<Category>) {

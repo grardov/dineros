@@ -92,7 +92,7 @@ export function LoginForm() {
             )}
             {mode === "signin" && (
               <Link
-                href="/login/recuperar"
+                href="/login/forgot-password"
                 className="absolute top-0 right-0 w-auto! text-sm leading-snug text-primary underline-offset-4 hover:underline"
               >
                 ¿Olvidaste tu contraseña?

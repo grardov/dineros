@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   if (token_hash && type === "recovery") {
     const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({ type, token_hash });
-    if (!error) return NextResponse.redirect(new URL("/nueva-contrasena", request.url));
+    if (!error) return NextResponse.redirect(new URL("/reset-password", request.url));
   }
-  return NextResponse.redirect(new URL("/login/recuperar?error=enlace", request.url));
+  return NextResponse.redirect(new URL("/login/forgot-password?error=expired-link", request.url));
 }

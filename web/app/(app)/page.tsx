@@ -106,7 +106,7 @@ function AccountRow({ account }: { account: Account }) {
   const isCredit = account.type === "credit";
   return (
     <Link
-      href={`/cuentas/${account.id}`}
+      href={`/accounts/${account.id}`}
       className="-mx-2 flex flex-col gap-1.5 rounded-md border-t border-muted px-2 py-2 first:border-t-0 hover:bg-sidebar"
     >
       <div className="flex items-center gap-2.5">
@@ -302,7 +302,7 @@ export default function Home() {
         <Card className="gap-1 pb-1">
           <CardHeader className="flex items-center justify-between">
             <CardTitle>Movimientos recientes</CardTitle>
-            <MoreLink href="/movimientos">Ver todos</MoreLink>
+            <MoreLink href="/transactions">Ver todos</MoreLink>
           </CardHeader>
           <TransactionRows
             transactions={monthTxs.slice(0, 7)}
@@ -326,7 +326,7 @@ export default function Home() {
           <Card>
             <CardHeader className="flex items-center justify-between">
               <CardTitle>Gastos por categoría</CardTitle>
-              <MoreLink href="/categorias">Ver todo</MoreLink>
+              <MoreLink href="/categories">Ver todo</MoreLink>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               {topCategories.length ? (
@@ -347,7 +347,7 @@ export default function Home() {
           <Card className="gap-2">
             <CardHeader className="flex items-center justify-between">
               <CardTitle>Cuentas</CardTitle>
-              <MoreLink href="/cuentas">Administrar</MoreLink>
+              <MoreLink href="/accounts">Administrar</MoreLink>
             </CardHeader>
             <CardContent className="flex flex-col">
               {accounts.length ? (

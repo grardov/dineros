@@ -182,7 +182,7 @@ export default function AccountPage() {
     return (
       <div className="flex flex-col items-start gap-2">
         <p className="text-muted-foreground">Esta cuenta no existe.</p>
-        <Link href="/cuentas" className={buttonVariants({ variant: "outline" })}>
+        <Link href="/accounts" className={buttonVariants({ variant: "outline" })}>
           Volver a cuentas
         </Link>
       </div>
@@ -196,7 +196,7 @@ export default function AccountPage() {
   return (
     <>
       <nav className="flex items-center gap-1.5 text-[0.8125rem] text-muted-foreground">
-        <Link href="/cuentas" className="hover:text-foreground">
+        <Link href="/accounts" className="hover:text-foreground">
           Cuentas
         </Link>
         <ChevronRightIcon className="size-3.5" />

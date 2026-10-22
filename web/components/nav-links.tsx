@@ -8,9 +8,9 @@ import { NewTransactionButton } from "@/components/transaction-list";
 
 const LINKS = [
   { href: "/", label: "Resumen", icon: HouseIcon },
-  { href: "/movimientos", label: "Movimientos", icon: ArrowLeftRightIcon },
-  { href: "/cuentas", label: "Cuentas", icon: WalletIcon },
-  { href: "/categorias", label: "Categorías", icon: TagsIcon },
+  { href: "/transactions", label: "Movimientos", icon: ArrowLeftRightIcon },
+  { href: "/accounts", label: "Cuentas", icon: WalletIcon },
+  { href: "/categories", label: "Categorías", icon: TagsIcon },
 ];
 
 const isActive = (href: string, pathname: string) =>

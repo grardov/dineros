@@ -32,7 +32,7 @@ function AccountCard({ account }: { account: Account }) {
   const credit = useCredit(account);
   const isCredit = account.type === "credit";
   return (
-    <Link href={`/cuentas/${account.id}`}>
+    <Link href={`/accounts/${account.id}`}>
       <Card
         className={`h-full gap-3.5 p-4 transition-colors hover:border-primary/40 ${account.archived_at ? "opacity-60" : ""}`}
       >

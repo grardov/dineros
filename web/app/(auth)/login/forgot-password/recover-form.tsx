@@ -14,7 +14,7 @@ import { AuthCard, FormAlert, SubmitButton } from "../../auth-ui";
 
 // /auth/confirm sends people back here when their link is expired or already used.
 function ExpiredLinkAlert() {
-  if (useSearchParams().get("error") !== "enlace") return null;
+  if (useSearchParams().get("error") !== "expired-link") return null;
   return <FormAlert tone="error">El enlace expiró o ya se usó. Pide uno nuevo.</FormAlert>;
 }
 
