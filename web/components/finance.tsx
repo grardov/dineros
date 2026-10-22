@@ -9,8 +9,10 @@ import {
   TrendingUpIcon,
 } from "lucide-react";
 
+import Image from "next/image";
 import Link from "next/link";
 
+import { findInstitution } from "@/lib/institutions";
 import { useStore } from "@/lib/store";
 import { type Account, type AccountType, MINUS, money } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -45,8 +47,23 @@ const ICONS: Record<AccountType, typeof LandmarkIcon> = {
   investment: TrendingUpIcon,
 };
 
-// Credit cards get the dark tile so debt reads differently from money you have.
+// The institution's logo when we have one; otherwise an icon for the type, where credit cards get
+// the dark tile so debt reads differently from money you have.
 export function AccountTile({ account, className }: { account: Account; className?: string }) {
+  const institution = findInstitution(account.institution);
+  if (institution?.logo)
+    return (
+      <Image
+        src={`/institutions/${institution.id}.png`}
+        alt=""
+        width={128}
+        height={128}
+        className={cn(
+          "size-9 shrink-0 rounded-[10px] border border-border bg-white object-cover",
+          className,
+        )}
+      />
+    );
   const Icon = ICONS[account.type];
   return (
     <span

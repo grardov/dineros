@@ -113,7 +113,7 @@ export function FormDialog({
                 </AlertDialogContent>
               </AlertDialog>
             )}
-            <Button type="button" variant="ghost" onClick={close}>
+            <Button type="button" variant="outline" onClick={close}>
               Cancelar
             </Button>
             <Button type="submit" disabled={pending}>

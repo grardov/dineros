@@ -7,6 +7,7 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { deleteAccount, saveAccount } from "@/lib/actions";
+import { INSTITUTIONS } from "@/lib/institutions";
 import { ACCOUNT_TYPES, type Account, type AccountType } from "@/lib/types";
 
 export function AccountDialog({
@@ -84,7 +85,15 @@ export function AccountDialog({
           maxLength={100}
           placeholder="BBVA, Nu, Banamex…"
           defaultValue={account?.institution ?? ""}
+          list="institutions"
+          autoComplete="off"
         />
+        {/* Suggestions only: any other name is fine too. */}
+        <datalist id="institutions">
+          {INSTITUTIONS.map((i) => (
+            <option key={i.id} value={i.name} />
+          ))}
+        </datalist>
       </Field>
       <Field>
         <FieldLabel htmlFor="opening_balance">

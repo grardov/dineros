@@ -78,7 +78,7 @@ export function TransactionDialog({
             title="Primero agrega una cuenta"
             action={
               <>
-                <Button variant="ghost" onClick={onClose}>
+                <Button variant="outline" onClick={onClose}>
                   Cancelar
                 </Button>
                 <Button onClick={() => setCreatingAccount(true)}>Agregar cuenta</Button>
