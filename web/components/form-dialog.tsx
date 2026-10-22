@@ -23,6 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 
 // Shared shell for the create/edit dialogs. onSubmit/onDelete resolve to an error message to keep
 // it open, or null to close.
@@ -127,9 +128,70 @@ export function FormDialog({
   );
 }
 
-// FormData helpers: empty inputs become null.
+// FormData helpers: empty inputs become null. num() accepts MoneyInput's "12,000.50".
 export const text = (d: FormData, key: string) => String(d.get(key) ?? "").trim() || null;
 export const num = (d: FormData, key: string) => {
   const v = text(d, key);
-  return v === null ? null : Number(v);
+  return v === null ? null : Number(v.replaceAll(",", ""));
 };
+
+// "1234567.891" → "1,234,567.89": digits only, one dot, two decimals, 12 integer digits (the
+// DB's numeric(14, 2)).
+export function formatAmount(raw: string) {
+  const [int, ...rest] = raw.replace(/[^\d.]/g, "").split(".");
+  const digits = int.replace(/^0+(?=\d)/, "").slice(0, 12);
+  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return rest.length ? `${grouped}.${rest.join("").slice(0, 2)}` : grouped;
+}
+
+// Text input that groups thousands as you type and pads to two decimals on blur.
+// ponytail: no negatives; add a sign toggle if overdrawn opening balances come up.
+export function MoneyInput({
+  defaultValue,
+  currency,
+  ...props
+}: Omit<React.ComponentProps<typeof Input>, "type" | "value" | "defaultValue" | "onChange"> & {
+  defaultValue?: number | null;
+  currency?: string;
+}) {
+  const [value, setValue] = useState(defaultValue ? formatAmount(defaultValue.toFixed(2)) : "");
+  return (
+    <div className="relative">
+      <span className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-sm text-muted-foreground">
+        $
+      </span>
+      <Input
+        {...props}
+        inputMode="decimal"
+        autoComplete="off"
+        placeholder="0.00"
+        value={value}
+        className="pr-12 pl-6 tabular-nums"
+        onChange={(e) => {
+          const input = e.target;
+          // Keep the caret after the same digits once the commas move around.
+          const before = input.value
+            .slice(0, input.selectionStart ?? input.value.length)
+            .replace(/[^\d.]/g, "").length;
+          const next = formatAmount(input.value);
+          setValue(next);
+          requestAnimationFrame(() => {
+            let at = 0;
+            for (let seen = 0; at < next.length && seen < before; at++)
+              if (next[at] !== ",") seen++;
+            input.setSelectionRange(at, at);
+          });
+        }}
+        onBlur={() => {
+          const n = Number(value.replaceAll(",", ""));
+          setValue(value && !Number.isNaN(n) ? formatAmount(n.toFixed(2)) : "");
+        }}
+      />
+      {currency && (
+        <span className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-xs text-subtle">
+          {currency}
+        </span>
+      )}
+    </div>
+  );
+}

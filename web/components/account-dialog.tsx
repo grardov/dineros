@@ -2,13 +2,30 @@
 
 import { useState } from "react";
 
-import { FormDialog, num, text } from "@/components/form-dialog";
+import { FormDialog, MoneyInput, num, text } from "@/components/form-dialog";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { deleteAccount, saveAccount } from "@/lib/actions";
-import { INSTITUTIONS } from "@/lib/institutions";
+import { findInstitution, INSTITUTIONS } from "@/lib/institutions";
 import { ACCOUNT_TYPES, type Account, type AccountType } from "@/lib/types";
+
+const NAME_EXAMPLES: Record<AccountType, string> = {
+  debit: "Ej. Nómina",
+  credit: "Ej. Tarjeta Oro",
+  cash: "Ej. Cartera",
+  savings: "Ej. Fondo de emergencia",
+  investment: "Ej. Cetes a 28 días",
+};
+
+const CURRENCIES: Record<string, string> = {
+  MXN: "MXN — Peso",
+  USD: "USD — Dólar",
+  EUR: "EUR — Euro",
+};
+
+const BY_NAME = INSTITUTIONS.toSorted((a, b) => a.name.localeCompare(b.name, "es"));
+const OTHER = "__other";
 
 export function AccountDialog({
   account,
@@ -20,6 +37,11 @@ export function AccountDialog({
   onClose: () => void;
 }) {
   const [type, setType] = useState<AccountType>(account?.type ?? "debit");
+  const [currency, setCurrency] = useState(account?.currency ?? "MXN");
+  // A saved name we know ("BBVA México") selects that institution; anything else is "Otra".
+  const [institution, setInstitution] = useState(() =>
+    account?.institution ? (findInstitution(account.institution)?.name ?? OTHER) : "",
+  );
   const credit = type === "credit";
 
   return (
@@ -30,15 +52,17 @@ export function AccountDialog({
       onDelete={account && (() => deleteAccount(account.id))}
       onSubmit={(d) => {
         const opening = num(d, "opening_balance") ?? 0;
+        const limit = credit ? num(d, "credit_limit") : null;
+        if (limit === 0) return "El límite de crédito debe ser mayor a $0.";
         return saveAccount(account?.id, {
           archived_at: account?.archived_at ?? null,
           name: text(d, "name")!,
           type,
           institution: text(d, "institution"),
-          currency: text(d, "currency")!.toUpperCase(),
+          currency,
           // Credit card debt is stored negative; the form asks for it as a positive amount.
           opening_balance: credit ? -opening : opening,
-          credit_limit: credit ? num(d, "credit_limit") : null,
+          credit_limit: limit,
           statement_day: credit ? num(d, "statement_day") : null,
           payment_due_day: credit ? num(d, "payment_due_day") : null,
         });
@@ -46,7 +70,14 @@ export function AccountDialog({
     >
       <Field>
         <FieldLabel htmlFor="name">Nombre</FieldLabel>
-        <Input id="name" name="name" required maxLength={100} defaultValue={account?.name} />
+        <Input
+          id="name"
+          name="name"
+          required
+          maxLength={100}
+          placeholder={NAME_EXAMPLES[type]}
+          defaultValue={account?.name}
+        />
       </Field>
       <div className="grid grid-cols-2 gap-4">
         <Field>
@@ -66,46 +97,61 @@ export function AccountDialog({
         </Field>
         <Field>
           <FieldLabel htmlFor="currency">Moneda</FieldLabel>
-          <Input
+          <NativeSelect
             id="currency"
-            name="currency"
-            required
-            minLength={3}
-            maxLength={3}
-            defaultValue={account?.currency ?? "MXN"}
-            className="uppercase"
-          />
+            className="w-full"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+          >
+            {/* Keeps a currency saved before this list existed selectable. */}
+            {[...new Set([...Object.keys(CURRENCIES), currency])].map((code) => (
+              <NativeSelectOption key={code} value={code}>
+                {CURRENCIES[code] ?? code}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
         </Field>
       </div>
       <Field>
         <FieldLabel htmlFor="institution">Institución</FieldLabel>
-        <Input
+        <NativeSelect
           id="institution"
-          name="institution"
-          maxLength={100}
-          placeholder="BBVA, Nu, Banamex…"
-          defaultValue={account?.institution ?? ""}
-          list="institutions"
-          autoComplete="off"
-        />
-        {/* Suggestions only: any other name is fine too. */}
-        <datalist id="institutions">
-          {INSTITUTIONS.map((i) => (
-            <option key={i.id} value={i.name} />
+          name={institution === OTHER ? undefined : "institution"}
+          className="w-full"
+          value={institution}
+          onChange={(e) => setInstitution(e.target.value)}
+        >
+          <NativeSelectOption value="">Sin institución</NativeSelectOption>
+          {BY_NAME.map((i) => (
+            <NativeSelectOption key={i.id} value={i.name}>
+              {i.name}
+            </NativeSelectOption>
           ))}
-        </datalist>
+          <NativeSelectOption value={OTHER}>Otra…</NativeSelectOption>
+        </NativeSelect>
+        {institution === OTHER && (
+          <Input
+            name="institution"
+            aria-label="Nombre de la institución"
+            required
+            autoFocus
+            maxLength={100}
+            placeholder="Nombre de la institución"
+            defaultValue={
+              findInstitution(account?.institution ?? null) ? "" : (account?.institution ?? "")
+            }
+          />
+        )}
       </Field>
       <Field>
         <FieldLabel htmlFor="opening_balance">
           {credit ? "Deuda inicial" : "Saldo inicial"}
         </FieldLabel>
-        <Input
+        <MoneyInput
           id="opening_balance"
           name="opening_balance"
-          type="number"
-          step="0.01"
-          min={credit ? 0 : undefined}
-          defaultValue={account ? Math.abs(account.opening_balance) : 0}
+          currency={currency}
+          defaultValue={account && Math.abs(account.opening_balance)}
         />
         <FieldDescription>Antes de cualquier movimiento registrado.</FieldDescription>
       </Field>
@@ -113,13 +159,11 @@ export function AccountDialog({
         <>
           <Field>
             <FieldLabel htmlFor="credit_limit">Límite de crédito</FieldLabel>
-            <Input
+            <MoneyInput
               id="credit_limit"
               name="credit_limit"
-              type="number"
-              step="0.01"
-              min="0.01"
-              defaultValue={account?.credit_limit ?? ""}
+              currency={currency}
+              defaultValue={account?.credit_limit}
             />
           </Field>
           <div className="grid grid-cols-2 gap-4">
