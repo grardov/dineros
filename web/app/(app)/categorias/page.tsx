@@ -13,12 +13,13 @@ import { useStore } from "@/lib/store";
 import { CATEGORY_KINDS, type Category, type CategoryKind, money } from "@/lib/types";
 
 const cols =
-  "grid grid-cols-[minmax(0,1fr)_5rem_1rem] items-center gap-3.5 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_1rem]";
+  "grid grid-cols-[minmax(0,1fr)_5rem_2.75rem] items-center gap-3.5 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_2.75rem]";
 
 export default function CategoriesPage() {
   const store = useStore();
   const [kind, setKind] = useState<CategoryKind>("expense");
-  const [editing, setEditing] = useState<Category | "new" | null>(null);
+  // A category to edit, or a new one (under parentId when adding a subcategory).
+  const [editing, setEditing] = useState<{ category?: Category; parentId?: string } | null>(null);
   const month = store.today.slice(0, 7);
   const monthName = new Date(`${store.today}T00:00:00`).toLocaleDateString("es-MX", {
     month: "long",
@@ -43,11 +44,9 @@ export default function CategoriesPage() {
     const { count, amount } = stats(c);
     const kids = sub ? 0 : childrenOf(c.id).length;
     return (
-      <button
+      <div
         key={c.id}
-        type="button"
-        onClick={() => setEditing(c)}
-        className={`${cols} w-full border-b border-muted px-4 text-left transition-colors last:border-b-0 hover:bg-sidebar focus-visible:bg-accent focus-visible:outline-none sm:px-[18px] ${sub ? "h-11" : "h-[54px]"}`}
+        className={`${cols} relative border-b border-muted px-4 transition-colors last:border-b-0 hover:bg-sidebar has-[.row-edit:focus-visible]:bg-accent sm:px-[18px] ${sub ? "h-11" : "h-[54px]"}`}
       >
         <span className={`flex min-w-0 items-center gap-2.5 ${sub ? "pl-3.5" : ""}`}>
           {sub && (
@@ -57,9 +56,16 @@ export default function CategoriesPage() {
             categoryId={c.id}
             className={sub ? "size-6 rounded-md text-sm" : "size-[30px] rounded-lg text-base"}
           />
-          <span className={`truncate text-sm ${sub ? "" : "font-semibold"}`}>{c.name}</span>
+          {/* Its ::after covers the row, so the whole row edits; the + button sits above it. */}
+          <button
+            type="button"
+            onClick={() => setEditing({ category: c })}
+            className={`row-edit truncate text-left text-sm outline-none after:absolute after:inset-0 ${sub ? "" : "font-semibold"}`}
+          >
+            {c.name}
+          </button>
           {kids > 0 && (
-            <span className="shrink-0 text-xs text-subtle max-sm:hidden">
+            <span className="shrink-0 text-xs text-subtle max-lg:hidden">
               {kids} subcategoría{kids === 1 ? "" : "s"}
             </span>
           )}
@@ -70,15 +76,29 @@ export default function CategoriesPage() {
         <span className={`text-right text-sm tabular-nums ${sub ? "" : "font-semibold"}`}>
           {amount ? money(amount) : "—"}
         </span>
-        <ChevronRightIcon className="size-4 text-[#a2abb6]" />
-      </button>
+        <span className="flex items-center justify-end gap-1">
+          {!sub && (
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              aria-label={`Agregar subcategoría a ${c.name}`}
+              title="Agregar subcategoría"
+              onClick={() => setEditing({ parentId: c.id })}
+              className="relative z-10 text-muted-foreground"
+            >
+              <PlusIcon />
+            </Button>
+          )}
+          <ChevronRightIcon className="size-4 text-[#a2abb6]" />
+        </span>
+      </div>
     );
   };
 
   return (
     <>
       <PageHeader title="Categorías">
-        <Button onClick={() => setEditing("new")}>
+        <Button onClick={() => setEditing({})}>
           <PlusIcon /> Nueva categoría
         </Button>
       </PageHeader>
@@ -99,7 +119,7 @@ export default function CategoriesPage() {
             icon={TagsIcon}
             title={`No tienes categorías de ${CATEGORY_KINDS[kind].toLowerCase()}`}
             action={
-              <Button onClick={() => setEditing("new")}>
+              <Button onClick={() => setEditing({})}>
                 <PlusIcon /> Nueva categoría
               </Button>
             }
@@ -127,7 +147,8 @@ export default function CategoriesPage() {
 
       {editing && (
         <CategoryDialog
-          category={editing === "new" ? undefined : editing}
+          category={editing.category}
+          parentId={editing.parentId}
           kind={kind}
           open
           onClose={() => setEditing(null)}

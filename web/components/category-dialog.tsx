@@ -23,11 +23,13 @@ import { CATEGORY_KINDS, type Category, type CategoryKind } from "@/lib/types";
 
 export function CategoryDialog({
   category,
+  parentId: initialParentId,
   kind: initialKind,
   open,
   onClose,
 }: {
   category?: Category;
+  parentId?: string; // preselected parent for a new subcategory
   kind: CategoryKind;
   open: boolean;
   onClose: () => void;
@@ -36,7 +38,7 @@ export function CategoryDialog({
   const [kind, setKind] = useState(category?.kind ?? initialKind);
   const [icon, setIcon] = useState(category?.icon ?? "");
   const [picking, setPicking] = useState(false);
-  const [parentId, setParentId] = useState(category?.parent_id ?? "");
+  const [parentId, setParentId] = useState(category?.parent_id ?? initialParentId ?? "");
   // The preview takes the hue the category will have: its parent's, or its own.
   const { tone } = useCategory(parentId || category?.id || null);
   // One level of nesting: a category with subcategories stays top-level.
@@ -49,7 +51,9 @@ export function CategoryDialog({
     <FormDialog
       open={open}
       onClose={onClose}
-      title={category ? "Editar categoría" : "Nueva categoría"}
+      title={
+        category ? "Editar categoría" : initialParentId ? "Nueva subcategoría" : "Nueva categoría"
+      }
       onDelete={category && (() => deleteCategory(category.id))}
       onSubmit={(d) => {
         const name = text(d, "name")!;

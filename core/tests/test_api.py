@@ -19,8 +19,12 @@ def test_users_only_see_and_touch_their_own_data(client, new_user) -> None:
         "/accounts/", headers=alice, json={"name": "Nómina", "type": "debit"}
     ).json()
     categories = client.get("/categories/", headers=alice).json()
-    assert len(categories) == 22  # seeded on signup
+    # Seeded on signup: 22 top-level categories, 36 subcategories under them.
+    assert len([c for c in categories if c["parent_id"] is None]) == 22
+    assert len([c for c in categories if c["parent_id"]]) == 36
     food = next(c for c in categories if c["name"] == "Restaurantes")
+    cafe = next(c for c in categories if c["name"] == "Cafeterías")
+    assert (cafe["parent_id"], cafe["kind"]) == (food["id"], "expense")
 
     # Bob sees nothing of Alice's and can't read, edit or delete it.
     assert client.get("/accounts/", headers=bob).json() == []
