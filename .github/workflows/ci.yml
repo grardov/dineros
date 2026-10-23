@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [staging]
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: astral-sh/setup-uv@v7
+        with:
+          working-directory: core
+      - run: pnpm install --frozen-lockfile
+      - run: uv sync --locked
+        working-directory: core
+      # Prettier, ESLint, tsc, Ruff lint and Ruff format.
+      - run: pnpm lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+      # Tests sign up real users, so they need Postgres + Auth (+ REST/Kong); skip the rest.
+      - run: supabase start -x studio,imgproxy,storage-api,realtime,edge-runtime,logflare,vector,postgres-meta,supavisor,mailpit
+        working-directory: db
+      - uses: astral-sh/setup-uv@v7
+        with:
+          working-directory: core
+      - run: uv run pytest
+        working-directory: core

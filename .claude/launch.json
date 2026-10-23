@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "core",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:core"],
+      "port": 8100
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:web"],
+      "port": 3000
+    }
+  ]
+}

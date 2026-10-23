@@ -1,0 +1,16 @@
+# Secrets (not here): `fly secrets set DATABASE_URL=... SUPABASE_URL=...`
+app = "dineros-core"
+# Keep it next to the Supabase project's region (sea = us-west-2).
+primary_region = "sea"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # ponytail: scales to zero, first request after idle pays a cold start; set min_machines_running = 1 if that hurts.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
