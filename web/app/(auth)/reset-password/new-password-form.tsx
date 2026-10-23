@@ -24,10 +24,11 @@ export function NewPasswordForm() {
               id="password"
               autoFocus
               autoComplete="new-password"
+              minLength={8}
               aria-invalid={!!state?.error || undefined}
               aria-describedby="password-hint"
             />
-            <FieldDescription id="password-hint">Mínimo 6 caracteres.</FieldDescription>
+            <FieldDescription id="password-hint">Mínimo 8 caracteres.</FieldDescription>
           </Field>
           <SubmitButton pending={pending} pendingLabel="Guardando…">
             Guardar contraseña

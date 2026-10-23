@@ -12,6 +12,15 @@ import type { Account, Category, Profile, Recurring, Transaction } from "@/lib/t
 
 type Input<T> = Omit<T, "id" | "created_at">;
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Ids come from the client and end up in core's URL, where "../profile" would reach another endpoint.
+function path(resource: string, id?: string) {
+  if (!id) return `/${resource}/`;
+  if (!UUID.test(id)) throw new Error("Invalid id");
+  return `/${resource}/${id}`;
+}
+
 async function write(
   path: string,
   init: RequestInit,
@@ -28,11 +37,7 @@ async function write(
 }
 
 const save = (resource: string, id: string | undefined, body: unknown, conflict?: string) =>
-  write(
-    id ? `/${resource}/${id}` : `/${resource}/`,
-    { method: id ? "PUT" : "POST", body: JSON.stringify(body) },
-    conflict,
-  );
+  write(path(resource, id), { method: id ? "PUT" : "POST", body: JSON.stringify(body) }, conflict);
 
 export async function saveAccount(id: string | undefined, body: Input<Account>) {
   return save("accounts", id, body);
@@ -41,7 +46,7 @@ export async function saveAccount(id: string | undefined, body: Input<Account>) 
 // Only offered from the account's own page, so it leaves for the list.
 export async function deleteAccount(id: string) {
   const error = await write(
-    `/accounts/${id}`,
+    path("accounts", id),
     { method: "DELETE" },
     "La cuenta tiene movimientos. Archívala en su lugar.",
   );
@@ -54,7 +59,7 @@ export async function saveCategory(id: string | undefined, body: Input<Category>
 }
 
 export async function deleteCategory(id: string) {
-  return write(`/categories/${id}`, { method: "DELETE" });
+  return write(path("categories", id), { method: "DELETE" });
 }
 
 export async function saveTransaction(id: string | undefined, body: Input<Transaction>) {
@@ -62,7 +67,7 @@ export async function saveTransaction(id: string | undefined, body: Input<Transa
 }
 
 export async function deleteTransaction(id: string) {
-  return write(`/transactions/${id}`, { method: "DELETE" });
+  return write(path("transactions", id), { method: "DELETE" });
 }
 
 export async function saveRecurring(id: string | undefined, body: Input<Recurring>) {
@@ -71,7 +76,7 @@ export async function saveRecurring(id: string | undefined, body: Input<Recurrin
 
 // Its transactions stay, just no longer linked.
 export async function deleteRecurring(id: string) {
-  return write(`/recurring/${id}`, { method: "DELETE" });
+  return write(path("recurring", id), { method: "DELETE" });
 }
 
 export async function saveProfile(body: Pick<Profile, "display_name" | "currency">) {
