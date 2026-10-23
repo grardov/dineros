@@ -1,7 +1,7 @@
 # Secrets (not here): `fly secrets set DATABASE_URL=... SUPABASE_URL=...`
 app = "dineros-core"
-# Keep it next to the Supabase project's region (iad = us-east-1).
-primary_region = "iad"
+# Keep it next to the Supabase project's region (sea = us-west-2).
+primary_region = "sea"
 
 [http_service]
   internal_port = 8080
