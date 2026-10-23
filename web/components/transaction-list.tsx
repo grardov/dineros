@@ -34,11 +34,13 @@ function Row({
   t,
   accountId,
   showDate,
+  fresh,
   onSelect,
 }: {
   t: Transaction;
   accountId?: string;
   showDate: boolean;
+  fresh: boolean;
   onSelect: () => void;
 }) {
   const store = useStore();
@@ -53,7 +55,10 @@ function Row({
     <button
       type="button"
       onClick={onSelect}
-      className="flex w-full items-center gap-3 border-b border-muted px-4 py-2.5 text-left transition-colors last:border-b-0 hover:bg-sidebar focus-visible:bg-accent focus-visible:outline-none md:px-[18px]"
+      className={cn(
+        "flex w-full items-center gap-3 border-b border-muted px-4 py-2.5 text-left transition-colors last:border-b-0 hover:bg-sidebar focus-visible:bg-accent focus-visible:outline-none md:px-[18px]",
+        fresh && "animate-row-in",
+      )}
     >
       <TransactionIcon
         transaction={t}
@@ -132,6 +137,11 @@ export function TransactionRows({
 }) {
   const store = useStore();
   const [editing, setEditing] = useState<Transaction | null>(null);
+  // A row that wasn't here at first and was just created slides in. The margin absorbs clock skew
+  // with the server; rows that only show up by changing month or filters were created earlier.
+  const [seen] = useState(() => new Set(transactions.map((t) => t.id)));
+  const fresh = (t: Transaction) =>
+    !seen.has(t.id) && Date.parse(t.created_at) > store.loadedAt - 5 * 60_000;
   const dialog = editing && (
     <TransactionDialog transaction={editing} open onClose={() => setEditing(null)} />
   );
@@ -147,7 +157,14 @@ export function TransactionRows({
     return (
       <div className="@container flex flex-col">
         {transactions.map((t) => (
-          <Row key={t.id} t={t} accountId={accountId} showDate onSelect={() => setEditing(t)} />
+          <Row
+            key={t.id}
+            t={t}
+            accountId={accountId}
+            showDate
+            fresh={fresh(t)}
+            onSelect={() => setEditing(t)}
+          />
         ))}
         {dialog}
       </div>
@@ -170,6 +187,7 @@ export function TransactionRows({
               t={t}
               accountId={accountId}
               showDate={false}
+              fresh={fresh(t)}
               onSelect={() => setEditing(t)}
             />
           ))}

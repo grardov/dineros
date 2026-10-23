@@ -43,7 +43,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
           <User compact />
         </Suspense>
       </header>
-      <main className="mx-auto flex w-full max-w-6xl min-w-0 flex-1 flex-col gap-5 px-4 pt-4 pb-28 md:px-8 md:py-7">
+      <main className="stagger mx-auto flex w-full max-w-6xl min-w-0 flex-1 flex-col gap-5 px-4 pt-4 pb-28 md:px-8 md:py-7">
         {/* The user's data loads at request time, so it streams in after the shell. */}
         <Suspense fallback={<p className="text-sm text-muted-foreground">Cargando…</p>}>
           <Data>

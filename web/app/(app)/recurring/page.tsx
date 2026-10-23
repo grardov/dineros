@@ -4,7 +4,14 @@ import { CalendarCheckIcon, PlusIcon, RepeatIcon } from "lucide-react";
 import { useState } from "react";
 
 import { TransactionIcon } from "@/components/category-icon";
-import { AccountTile, EmptyState, PageHeader, Stat, monthName } from "@/components/finance";
+import {
+  AccountTile,
+  EmptyState,
+  PageHeader,
+  Stat,
+  monthName,
+  useCountUp,
+} from "@/components/finance";
 import { OccurrenceRow, useFijosMonth } from "@/components/recurring";
 import { RecurringDialog } from "@/components/recurring-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +25,7 @@ export default function RecurringPage() {
   const [editing, setEditing] = useState<{ recurring?: Recurring } | null>(null);
   const now = useFijosMonth(0);
   const next = useFijosMonth(1);
+  const paidOut = useCountUp(now.paidOut);
   const edit = (recurring: Recurring) => () => setEditing({ recurring });
 
   const describe = (r: Recurring) => {
@@ -62,7 +70,7 @@ export default function RecurringPage() {
               </h2>
               {now.out > 0 && (
                 <span className="text-[0.8125rem] text-muted-foreground tabular-nums">
-                  Pagado <b className="text-foreground">{money(now.paidOut)}</b> de {money(now.out)}
+                  Pagado <b className="text-foreground">{money(paidOut)}</b> de {money(now.out)}
                   {now.leftOut > 0 && ` · faltan ${money(now.leftOut)}`}
                 </span>
               )}

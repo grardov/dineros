@@ -11,10 +11,11 @@ import {
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
 import { findInstitution } from "@/lib/institutions";
 import { useStore } from "@/lib/store";
-import { type Account, type AccountType, MINUS, money } from "@/lib/types";
+import { type Account, type AccountType, MINUS, money, signedMoney } from "@/lib/types";
 import { cn } from "cn";
 
 // Large amounts: the cents go muted so the whole figure carries the weight.
@@ -35,6 +36,68 @@ export function Amount({
     <span className={cn("font-semibold tracking-tight tabular-nums", className)}>
       {s.slice(0, dot)}
       <span className={centsClassName}>{s.slice(dot)}</span>
+    </span>
+  );
+}
+
+// The value eases from the last one it showed to the new one; it starts where it is.
+export function useCountUp(value: number, ms = 550) {
+  const [shown, setShown] = useState(value);
+  const from = useRef(value);
+  useEffect(() => {
+    const start = from.current;
+    if (start === value) return;
+    const duration = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : ms;
+    const t0 = performance.now();
+    let frame = 0;
+    const tick = (t: number) => {
+      const p = duration ? Math.min((t - t0) / duration, 1) : 1;
+      from.current = start + (value - start) * (1 - (1 - p) ** 3);
+      setShown(from.current);
+      if (p < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [value, ms]);
+  return shown;
+}
+
+// An Amount that counts to a new value, tints for a moment and floats the change above it.
+export function CountUpAmount({
+  value,
+  deltaClassName,
+  ...props
+}: React.ComponentProps<typeof Amount> & { deltaClassName?: string }) {
+  const shown = useCountUp(value);
+  const [prev, setPrev] = useState(value);
+  const [change, setChange] = useState<{ n: number; delta: number } | null>(null);
+  if (value !== prev) {
+    setPrev(value);
+    setChange({ n: (change?.n ?? 0) + 1, delta: value - prev });
+  }
+  const tone = change && (change.delta > 0 ? "var(--income)" : "var(--expense)");
+  return (
+    <span className="relative">
+      <span
+        key={change?.n}
+        className={change ? "md:animate-tint" : undefined}
+        style={{ "--tint": tone } as React.CSSProperties}
+      >
+        <Amount value={shown} {...props} />
+      </span>
+      {change && (
+        <span
+          key={`delta-${change.n}`}
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute right-0 bottom-full mb-1 animate-float-away text-[0.8125rem] font-semibold whitespace-nowrap tabular-nums",
+            change.delta > 0 ? "text-income" : "text-expense",
+            deltaClassName,
+          )}
+        >
+          {signedMoney(change.delta, props.currency)}
+        </span>
+      )}
     </span>
   );
 }

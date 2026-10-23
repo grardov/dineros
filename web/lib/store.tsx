@@ -12,6 +12,7 @@ const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.ge
 
 function useStoreValue(data: StoreData) {
   const [today] = useState(() => iso(new Date()));
+  const [loadedAt] = useState(() => Date.now());
 
   return useMemo(
     () => ({
@@ -23,13 +24,14 @@ function useStoreValue(data: StoreData) {
       recurring: data.recurring,
       occurrences: data.occurrences, // this month and next, by due date
       today,
+      loadedAt, // ms; what's created after this is new in this visit
       balance: (id: string) => data.balances[id]?.balance ?? 0,
       statements: (a: { id: string }) => data.statements[a.id] ?? [], // newest corte first
       account: (id: string | null) => data.accounts.find((a) => a.id === id),
       category: (id: string | null) => data.categories.find((c) => c.id === id),
       fijo: (id: string | null) => data.recurring.find((r) => r.id === id),
     }),
-    [data, today],
+    [data, today, loadedAt],
   );
 }
 

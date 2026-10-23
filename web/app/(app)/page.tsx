@@ -17,6 +17,7 @@ import { useCategory } from "@/components/category-icon";
 import {
   AccountTile,
   Amount,
+  CountUpAmount,
   EmptyState,
   MoreLink,
   PageHeader,
@@ -214,16 +215,17 @@ export default function Home() {
         <NewTransactionButton className="max-md:hidden" />
       </PageHeader>
 
-      <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
+      <div className="stagger grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
         <Card className="col-span-2 max-md:border-0 max-md:bg-primary max-md:text-primary-foreground md:col-span-1">
           <CardContent>
             <Stat
               label={<span className="max-md:text-primary-foreground/80">Patrimonio neto</span>}
             >
-              <Amount
+              <CountUpAmount
                 value={assets + debts}
                 className="text-[34px] leading-none md:text-[26px]"
                 centsClassName="text-subtle max-md:text-primary-foreground/60"
+                deltaClassName="max-md:text-primary-foreground"
               />
               <span className="text-xs text-muted-foreground max-md:text-primary-foreground/80">
                 Activos {money(assets)} · Deudas {signedMoney(debts, "MXN", false)}

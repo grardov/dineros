@@ -1,10 +1,17 @@
 "use client";
 
-import { RepeatIcon } from "lucide-react";
+import { CheckIcon, RepeatIcon } from "lucide-react";
 import { useState } from "react";
 
 import { TransactionIcon } from "@/components/category-icon";
-import { MoreLink, dayMonth, daysUntil, monthName, shiftMonth } from "@/components/finance";
+import {
+  MoreLink,
+  dayMonth,
+  daysUntil,
+  monthName,
+  shiftMonth,
+  useCountUp,
+} from "@/components/finance";
 import { TransactionDialog } from "@/components/transaction-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,6 +75,9 @@ export function OccurrenceRow({ o, onEdit }: { o: Occurrence; onEdit?: () => voi
   const store = useStore();
   const onCard = useOnCard()(o);
   const [registering, setRegistering] = useState(false);
+  // Paid while on screen: the button pops into the badge and the amount gets struck through.
+  const [wasPaid] = useState(o.status === "paid");
+  const justPaid = o.status === "paid" && !wasPaid;
   const { fijo } = o;
   const left = Math.max(o.expected_amount - o.paid_amount, 0);
   const amount = o.status === "paid" ? Math.max(o.paid_amount, o.expected_amount) : left;
@@ -75,7 +85,12 @@ export function OccurrenceRow({ o, onEdit }: { o: Occurrence; onEdit?: () => voi
   const to = store.account(fijo.to_account_id);
 
   return (
-    <div className="flex items-center gap-3 border-b border-muted px-4 py-3 last:border-b-0 md:px-[18px]">
+    <div
+      className={cn(
+        "flex items-center gap-3 border-b border-muted px-4 py-3 last:border-b-0 md:px-[18px]",
+        justPaid && "animate-flash",
+      )}
+    >
       <TransactionIcon transaction={fijo} className="size-9 rounded-[10px]" />
       <button
         type="button"
@@ -99,9 +114,11 @@ export function OccurrenceRow({ o, onEdit }: { o: Occurrence; onEdit?: () => voi
         <span className="flex flex-col items-end gap-0.5">
           <span
             className={cn(
-              "text-sm font-semibold tabular-nums",
+              "relative text-sm font-semibold tabular-nums transition-colors duration-300",
               fijo.kind === "income" ? "text-income" : "text-foreground",
-              o.status === "paid" && "text-muted-foreground line-through decoration-1",
+              o.status === "paid" &&
+                "text-muted-foreground after:absolute after:inset-x-0 after:top-1/2 after:h-px after:bg-current",
+              justPaid && "after:origin-left after:animate-strike",
             )}
           >
             {o.is_estimate && o.status !== "paid" && (
@@ -127,7 +144,9 @@ export function OccurrenceRow({ o, onEdit }: { o: Occurrence; onEdit?: () => voi
         </span>
         <span className="text-right sm:w-24">
           {o.status === "paid" ? (
-            <Badge variant="income">{fijo.kind === "income" ? "Recibido" : "Pagado"}</Badge>
+            <Badge variant="income" className={cn(justPaid && "animate-pop")}>
+              <CheckIcon /> {fijo.kind === "income" ? "Recibido" : "Pagado"}
+            </Badge>
           ) : (
             <Button variant="outline" size="sm" onClick={() => setRegistering(true)}>
               Registrar
@@ -162,6 +181,7 @@ export function FijosCard() {
   const now = useFijosMonth(0);
   const next = useFijosMonth(1);
   const pct = now.out ? Math.min(100, (now.paidOut / now.out) * 100) : 0;
+  const paidOut = useCountUp(now.paidOut);
 
   return (
     <Card>
@@ -176,12 +196,15 @@ export function FijosCard() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{monthName(now.month, false)}</span>
                 <span className="tabular-nums">
-                  <b className="font-semibold">{money(now.paidOut)}</b>
+                  <b className="font-semibold">{money(paidOut)}</b>
                   <span className="text-muted-foreground"> de {money(now.out)}</span>
                 </span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
-                <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                <div
+                  className="h-full rounded-full bg-primary transition-[width] duration-600 ease-soft"
+                  style={{ width: `${pct}%` }}
+                />
               </div>
               {now.leftOut > 0 && (
                 <span className="text-xs text-muted-foreground tabular-nums">
