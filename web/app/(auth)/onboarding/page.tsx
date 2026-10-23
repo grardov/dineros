@@ -41,7 +41,7 @@ async function Onboarding() {
           <span className="truncate text-muted-foreground max-sm:hidden">
             {data?.claims.email} ·
           </span>
-          <button type="submit" className="font-medium text-primary hover:underline">
+          <button type="submit" className="-m-2 p-2 font-medium text-primary hover:underline">
             Salir
           </button>
         </form>

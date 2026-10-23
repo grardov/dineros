@@ -58,15 +58,22 @@ function CreditSummary({ account }: { account: Account }) {
   const days = last ? daysUntil(store.today, last.due_date) : 0;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
       <Card>
         <CardContent className="flex flex-col gap-4">
-          <div className="flex items-end justify-between gap-4">
+          <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
             <Stat label="Saldo actual (debes)">
-              <Amount value={debt} currency={cur} className="text-[34px] leading-none" />
+              <Amount
+                value={debt}
+                currency={cur}
+                className="text-[28px] leading-none min-[375px]:text-[34px]"
+              />
             </Stat>
             {available !== null && (
-              <Stat label="Disponible" className="text-right">
+              <Stat
+                label="Disponible"
+                className="text-right max-sm:w-full max-sm:flex-row max-sm:items-baseline max-sm:justify-between"
+              >
                 <Amount
                   value={available}
                   currency={cur}
@@ -121,8 +128,9 @@ function CreditSummary({ account }: { account: Account }) {
               )}
             </CardHeader>
             <CardContent className="flex flex-col gap-3.5">
-              <div className="grid grid-cols-3 gap-2.5">
-                <div className="flex flex-col gap-1 rounded-lg border border-[#c9ddd7] bg-[#f3f8f6] p-3">
+              {/* Phones: one row per amount; a third of the card is too narrow for them. */}
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                <div className="flex flex-col gap-1 rounded-lg border border-[#c9ddd7] bg-[#f3f8f6] p-3 max-sm:flex-row max-sm:items-center max-sm:justify-between max-sm:py-2.5">
                   <span className="text-xs text-accent-foreground">Para no generar intereses</span>
                   <Amount
                     value={last.statement_balance}
@@ -131,7 +139,7 @@ function CreditSummary({ account }: { account: Account }) {
                     centsClassName=""
                   />
                 </div>
-                <div className="flex flex-col gap-1 rounded-lg bg-background p-3">
+                <div className="flex flex-col gap-1 rounded-lg bg-background p-3 max-sm:flex-row max-sm:items-center max-sm:justify-between max-sm:py-2.5">
                   <span className="text-xs text-muted-foreground">Pagado</span>
                   <Amount
                     value={last.payments}
@@ -140,7 +148,7 @@ function CreditSummary({ account }: { account: Account }) {
                     centsClassName=""
                   />
                 </div>
-                <div className="flex flex-col gap-1 rounded-lg bg-background p-3">
+                <div className="flex flex-col gap-1 rounded-lg bg-background p-3 max-sm:flex-row max-sm:items-center max-sm:justify-between max-sm:py-2.5">
                   <span className="text-xs text-muted-foreground">Te faltan</span>
                   <Amount
                     value={last.pending}
@@ -255,7 +263,8 @@ export default function AccountPage() {
       {credit ? (
         <CreditSummary account={account} />
       ) : (
-        <Card className="grid grid-cols-3 gap-0 p-0">
+        // Phones: the balance gets a row of its own; three amounts don't fit side by side.
+        <Card className="grid grid-cols-2 gap-0 p-0 md:grid-cols-3">
           {[
             [
               "Saldo",
@@ -285,7 +294,7 @@ export default function AccountPage() {
             <Stat
               key={i}
               label={label}
-              className="border-r border-muted px-4 py-4 last:border-r-0 md:px-5.5 md:py-4.5"
+              className="border-r border-muted px-4 py-4 last:border-r-0 max-md:first:col-span-2 max-md:first:border-r-0 max-md:first:border-b md:px-5.5 md:py-4.5"
             >
               {value}
             </Stat>

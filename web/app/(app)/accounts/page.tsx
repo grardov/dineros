@@ -168,7 +168,7 @@ export default function AccountsPage() {
                 {signedMoney(total, "MXN", false)}
               </span>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {group.map((a) => (
                 <AccountCard key={a.id} account={a} />
               ))}
@@ -193,7 +193,7 @@ export default function AccountsPage() {
             />
           </button>
           {showArchived && (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {archived.map((a) => (
                 <AccountCard key={a.id} account={a} />
               ))}
