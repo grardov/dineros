@@ -15,10 +15,18 @@ import { cn } from "@/lib/utils";
 
 export type Occurrence = RecurringOccurrence & { fijo: Recurring };
 
+// A fijo charged to a credit card: its cash goes out with the card's payment, which counts it.
+export function useOnCard() {
+  const store = useStore();
+  return (o: Occurrence) =>
+    o.fijo.kind !== "income" && store.account(o.fijo.account_id)?.type === "credit";
+}
+
 // A month of fijos (this one or the next) and its totals. "Out" is expenses plus transfers
-// (card payments, savings): money leaving the account it's paid from.
+// (card payments, savings): cash leaving the account it's paid from, so not what goes on a card.
 export function useFijosMonth(offset: 0 | 1) {
   const store = useStore();
+  const onCard = useOnCard();
   const month = `${shiftMonth(store.today, offset)}-01`;
   const items: Occurrence[] = store.occurrences.flatMap((o) => {
     const fijo = store.fijo(o.recurring_id);
@@ -26,7 +34,7 @@ export function useFijosMonth(offset: 0 | 1) {
   });
   const sum = (xs: Occurrence[], f: (o: Occurrence) => number) => xs.reduce((s, o) => s + f(o), 0);
   const income = items.filter((o) => o.fijo.kind === "income");
-  const out = items.filter((o) => o.fijo.kind !== "income");
+  const out = items.filter((o) => o.fijo.kind !== "income" && !onCard(o));
   return {
     month,
     items,
@@ -58,6 +66,7 @@ function dueText(o: Occurrence, today: string) {
 // One expected payment: what, when, how much, and a button to register it.
 export function OccurrenceRow({ o, onEdit }: { o: Occurrence; onEdit?: () => void }) {
   const store = useStore();
+  const onCard = useOnCard()(o);
   const [registering, setRegistering] = useState(false);
   const { fijo } = o;
   const left = Math.max(o.expected_amount - o.paid_amount, 0);
@@ -107,6 +116,12 @@ export function OccurrenceRow({ o, onEdit }: { o: Occurrence; onEdit?: () => voi
           {o.paid_amount > 0 && o.status !== "paid" && (
             <span className="text-xs text-muted-foreground tabular-nums">
               Pagado {money(o.paid_amount, account?.currency)}
+            </span>
+          )}
+          {onCard && <span className="text-xs text-muted-foreground">En tarjeta</span>}
+          {o.fijo_charges > 0 && (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              Incluye ≈ {money(o.fijo_charges, account?.currency)} de fijos
             </span>
           )}
         </span>

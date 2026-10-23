@@ -240,3 +240,61 @@ def test_recurring(client, new_user) -> None:
 
     assert client.get("/recurring/", headers=other).json() == []
     assert client.get("/recurring/occurrences/", headers=other).json() == []
+
+
+def test_card_payment_counts_fijos_still_to_charge(client, new_user) -> None:
+    """A card payment's estimate adds the fijos charged to the card before its open corte."""
+    h = new_user()
+    this_month = date.today().replace(day=1)
+    next_month = (this_month + timedelta(days=32)).replace(day=1)
+    debit = client.post(
+        "/accounts/", headers=h, json={"name": "Nómina", "type": "debit", "opening_balance": "0"}
+    ).json()
+    # Corte on the last day of the month, so this month's is always open; paid next month.
+    card = client.post(
+        "/accounts/",
+        headers=h,
+        json={
+            "name": "TDC",
+            "type": "credit",
+            "opening_balance": "0",
+            "statement_day": 31,
+            "payment_due_day": 10,
+        },
+    ).json()
+
+    def fijo(**body):
+        base = {"kind": "expense", "account_id": card["id"], "starts_on": str(this_month)}
+        r = client.post("/recurring/", headers=h, json=base | body)
+        assert r.status_code == 201, r.text
+        return r.json()
+
+    netflix = fijo(name="Netflix", amount="299", day_of_month=31)
+    spotify = fijo(name="Spotify", amount="129", day_of_month=1)
+    pago = fijo(
+        name="Pago TDC",
+        kind="transfer",
+        account_id=debit["id"],
+        to_account_id=card["id"],
+        day_of_month=10,
+    )
+
+    def charge(amount, **link):
+        tx = {"kind": "expense", "amount": amount, "occurred_on": str(this_month)}
+        r = client.post("/transactions/", headers=h, json=tx | {"account_id": card["id"]} | link)
+        assert r.status_code == 201, r.text
+
+    charge("100")
+    # Spotify is registered: it's in the statement already and isn't counted twice.
+    charge("129", recurring_id=spotify["id"], recurring_period=str(this_month))
+
+    by = {
+        (o["recurring_id"], o["month"]): o
+        for o in client.get("/recurring/occurrences/", headers=h).json()
+    }
+    payment = by[(pago["id"], str(next_month))]
+    assert payment["fijo_charges"] == "299.00"
+    assert payment["expected_amount"] == "528.00"
+    assert payment["is_estimate"]
+    # Next month's Netflix lands after this corte.
+    assert by[(netflix["id"], str(next_month))]["fijo_charges"] == "0.00"

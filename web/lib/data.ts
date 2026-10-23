@@ -35,7 +35,9 @@ export async function loadData() {
     api<Wire<Transaction, "amount">[]>("/transactions/?limit=500"),
     api<Wire<Balance, "balance" | "available_credit">[]>("/accounts/balances/"),
     api<Wire<Recurring, "amount">[]>("/recurring/"),
-    api<Wire<RecurringOccurrence, "expected_amount" | "paid_amount">[]>("/recurring/occurrences/"),
+    api<Wire<RecurringOccurrence, "expected_amount" | "paid_amount" | "fijo_charges">[]>(
+      "/recurring/occurrences/",
+    ),
   ]);
   const credit = accounts.filter((a) => a.type === "credit");
   const statements = await Promise.all(
@@ -53,7 +55,9 @@ export async function loadData() {
     categories,
     transactions: transactions.map((t) => toNumbers(t, ["amount"])),
     recurring: recurring.map((r) => toNumbers(r, ["amount"])),
-    occurrences: occurrences.map((o) => toNumbers(o, ["expected_amount", "paid_amount"])), // by due date
+    occurrences: occurrences.map((o) =>
+      toNumbers(o, ["expected_amount", "paid_amount", "fijo_charges"]),
+    ), // by due date
     balances: Object.fromEntries(
       balances.map((b) => [b.account_id, toNumbers(b, ["balance", "available_credit"])]),
     ),

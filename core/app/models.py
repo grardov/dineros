@@ -153,3 +153,4 @@ class RecurringOccurrence(SQLModel, table=True):
     is_estimate: bool
     paid_amount: Decimal
     status: str  # paid | overdue | pending
+    fijo_charges: Decimal  # card payment: unpaid fijos charged to the card before its corte

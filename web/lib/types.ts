@@ -75,6 +75,7 @@ export type RecurringOccurrence = {
   is_estimate: boolean;
   paid_amount: number;
   status: "paid" | "overdue" | "pending";
+  fijo_charges: number; // card payment: unpaid fijos charged to the card before its corte
 };
 
 export const FREQUENCIES: Record<number, string> = {
