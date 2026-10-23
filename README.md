@@ -35,8 +35,36 @@ Migraciones: `pnpm --filter db migration:new <nombre>` y `pnpm --filter db reset
 
 ## Calidad de código
 
-`pnpm lint` y `pnpm format` corren ESLint/Prettier en `web` y Ruff en `core`.
-Indentación y finales de línea se definen en `.editorconfig` (2 espacios; 4 en Python).
+`pnpm lint` revisa Prettier, ESLint y tipos (`tsc`) en `web` y Ruff en `core`; `pnpm format`
+corrige Prettier y Ruff. Indentación y finales de línea se definen en `.editorconfig` (2 espacios;
+4 en Python).
+
+## CI/CD
+
+Ramas: los PRs van a `staging`; `main` es producción.
+
+- **CI** ([`ci.yml`](.github/workflows/ci.yml)), en cada PR y push a `staging`: `pnpm lint` y los
+  tests de `core` contra un Supabase local.
+- **Deploy** ([`deploy.yml`](.github/workflows/deploy.yml)), en cada push a `main`: CI →
+  `supabase db push` (migraciones a producción) → `flyctl deploy` de `core`. Las migraciones van
+  primero para que el código nuevo nunca corra contra un esquema viejo.
+- **web** se despliega solo con la integración Git de Vercel.
+
+### Setup inicial (una vez)
+
+1. **Supabase:** crea el proyecto. En _Authentication > URL Configuration_ pon la URL de Vercel
+   como Site URL y en Redirect URLs.
+2. **Fly** (`core/fly.toml`):
+   ```bash
+   cd core && fly apps create dineros-core
+   fly secrets set DATABASE_URL="<Session pooler>" SUPABASE_URL="https://<ref>.supabase.co"
+   fly tokens create deploy
+   ```
+3. **GitHub:** en _Settings > Environments_ crea `production` con los secrets `SUPABASE_DB_URL`
+   (connection string de Supabase con contraseña) y `FLY_API_TOKEN`.
+4. **Vercel:** Root Directory `web`, **Production Branch `main`** (el default del repo es
+   `staging`), y las variables `CORE_API_URL=https://dineros-core.fly.dev/api/v1`,
+   `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY`.
 
 ## Arquitectura
 

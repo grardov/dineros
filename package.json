@@ -7,7 +7,7 @@
     "dev:core": "cd core && uv run fastapi dev --port 8100",
     "db:start": "pnpm --filter db start",
     "db:stop": "pnpm --filter db stop",
-    "lint": "pnpm --filter web lint && cd core && uv run ruff check . && uv run ruff format --check .",
+    "lint": "prettier --check . && pnpm --filter web lint && pnpm --filter web typecheck && cd core && uv run ruff check . && uv run ruff format --check .",
     "format": "prettier --write . && cd core && uv run ruff format ."
   },
   "devDependencies": {
