@@ -67,7 +67,7 @@ export default function RecurringPage() {
                 </span>
               )}
             </div>
-            <Card className="py-0">
+            <Card className="gap-0 py-0">
               {now.items.length ? (
                 now.items.map((o) => (
                   <OccurrenceRow key={o.recurring_id} o={o} onEdit={edit(o.fijo)} />
@@ -86,7 +86,9 @@ export default function RecurringPage() {
               {[
                 ["Entradas", next.income, "text-income"],
                 ["Salidas", -next.out, "text-expense"],
-                ["Te sobra", next.income - next.out, "text-foreground"],
+                next.income >= next.out
+                  ? ["Te sobra", next.income - next.out, "text-foreground"]
+                  : ["Te falta", next.out - next.income, "text-expense"],
               ].map(([label, value, color]) => (
                 <Stat
                   key={label as string}
@@ -130,7 +132,7 @@ export default function RecurringPage() {
                 </CardContent>
               </Card>
             )}
-            <Card className="py-0">
+            <Card className="gap-0 py-0">
               {next.items.length ? (
                 next.items.map((o) => (
                   <OccurrenceRow key={o.recurring_id} o={o} onEdit={edit(o.fijo)} />
@@ -148,7 +150,7 @@ export default function RecurringPage() {
                 {store.recurring.length}
               </span>
             </h2>
-            <Card className="py-0">
+            <Card className="gap-0 py-0">
               {byDay.map((r) => (
                 <button
                   key={r.id}

@@ -178,11 +178,16 @@ export function FijosCard() {
               <span className="text-muted-foreground">{monthName(next.month, false)}</span>
               <span className="flex flex-col items-end gap-0.5 tabular-nums">
                 <b className="font-semibold">{signedMoney(-next.out, "MXN", false)}</b>
-                {next.income > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    Te sobran {signedMoney(next.income - next.out, "MXN", false)}
-                  </span>
-                )}
+                {next.income > 0 &&
+                  (next.income >= next.out ? (
+                    <span className="text-xs text-muted-foreground">
+                      Te sobran {money(next.income - next.out)}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-expense">
+                      Te faltan {money(next.out - next.income)}
+                    </span>
+                  ))}
               </span>
             </div>
           </>
