@@ -20,6 +20,13 @@ export type Account = {
   created_at: string;
 };
 
+export type Profile = {
+  display_name: string | null;
+  currency: string; // for new accounts
+  onboarded_at: string | null; // null until onboarding is done
+  created_at: string;
+};
+
 export type Category = {
   id: string;
   name: string;

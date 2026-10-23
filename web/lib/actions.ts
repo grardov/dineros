@@ -4,7 +4,8 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { api, ApiError } from "@/lib/api";
-import type { Account, Category, Recurring, Transaction } from "@/lib/types";
+import { createClient } from "@/lib/supabase";
+import type { Account, Category, Profile, Recurring, Transaction } from "@/lib/types";
 
 // Writes go through core; on success the router refreshes so the store reloads.
 // They return an error message for the dialog, or null.
@@ -71,4 +72,34 @@ export async function saveRecurring(id: string | undefined, body: Input<Recurrin
 // Its transactions stay, just no longer linked.
 export async function deleteRecurring(id: string) {
   return write(`/recurring/${id}`, { method: "DELETE" });
+}
+
+export async function saveProfile(body: Pick<Profile, "display_name" | "currency">) {
+  return write("/profile/", { method: "PUT", body: JSON.stringify(body) });
+}
+
+export type OnboardingInput = Pick<Profile, "currency"> & {
+  display_name: string;
+  account: Input<Account>;
+  recurring: Omit<Input<Recurring>, "account_id" | "to_account_id" | "ends_on" | "paused_at">[];
+  remove_category_ids: string[];
+};
+
+// No refresh: the wizard shows its summary before moving on to Resumen.
+export async function completeOnboarding(body: OnboardingInput) {
+  try {
+    await api("/profile/onboarding", { method: "POST", body: JSON.stringify(body) });
+  } catch (e) {
+    if (!(e instanceof ApiError)) throw e;
+    return "Algo salió mal. Intenta de nuevo.";
+  }
+  return null;
+}
+
+// Everything goes with the user; their session cookie would only point at nobody.
+export async function deleteUser() {
+  const error = await write("/profile/", { method: "DELETE" });
+  if (error) return error;
+  await (await createClient()).auth.signOut({ scope: "local" });
+  redirect("/login");
 }

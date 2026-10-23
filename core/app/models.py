@@ -121,6 +121,41 @@ class Recurring(RecurringCreate, table=True):
     created_at: datetime = Field(default_factory=_now)
 
 
+class ProfileUpdate(SQLModel):
+    display_name: str | None = Field(default=None, min_length=1, max_length=100)
+    currency: str = Field(default="MXN", min_length=3, max_length=3)  # for new accounts
+
+
+class Profile(ProfileUpdate, table=True):
+    """Created with the user (DB trigger); onboarded_at is None until they finish onboarding."""
+
+    __tablename__ = "profiles"
+    user_id: uuid.UUID = Field(primary_key=True)
+    onboarded_at: datetime | None = None
+    created_at: datetime = Field(default_factory=_now)
+
+
+class OnboardingFijo(SQLModel):
+    """A fijo picked during onboarding; it goes on the account created there."""
+
+    name: str = Field(min_length=1, max_length=100)
+    kind: TransactionKind
+    amount: Decimal = Field(gt=0, max_digits=14, decimal_places=2)
+    is_variable: bool = False
+    category_id: uuid.UUID | None = None
+    day_of_month: int = Field(ge=1, le=31)
+    every_months: int = Field(default=1, ge=1, le=12)
+    starts_on: date
+
+
+class Onboarding(ProfileUpdate):
+    display_name: str = Field(min_length=1, max_length=100)
+    account: AccountCreate
+    recurring: list[OnboardingFijo] = []
+    # Top-level categories the user doesn't want; their subcategories go with them.
+    remove_category_ids: list[uuid.UUID] = []
+
+
 # Read-only views
 
 

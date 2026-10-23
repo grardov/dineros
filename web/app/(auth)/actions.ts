@@ -103,3 +103,10 @@ export async function signOut() {
   await supabase.auth.signOut();
   redirect("/login");
 }
+
+// Ends every session of the user, this one included.
+export async function signOutEverywhere() {
+  const supabase = await createClient();
+  await supabase.auth.signOut({ scope: "global" });
+  redirect("/login");
+}

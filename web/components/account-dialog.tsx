@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { deleteAccount, saveAccount } from "@/lib/actions";
 import { findInstitution, INSTITUTIONS } from "@/lib/institutions";
+import { useStore } from "@/lib/store";
 import { ACCOUNT_TYPES, type Account, type AccountType, money } from "@/lib/types";
 
-const NAME_EXAMPLES: Record<AccountType, string> = {
+export const NAME_EXAMPLES: Record<AccountType, string> = {
   debit: "Ej. Nómina",
   credit: "Ej. Tarjeta Oro",
   cash: "Ej. Cartera",
@@ -18,7 +19,7 @@ const NAME_EXAMPLES: Record<AccountType, string> = {
   investment: "Ej. Cetes a 28 días",
 };
 
-const CURRENCIES: Record<string, string> = {
+export const CURRENCIES: Record<string, string> = {
   MXN: "MXN — Peso",
   USD: "USD — Dólar",
   EUR: "EUR — Euro",
@@ -37,7 +38,8 @@ export function AccountDialog({
   onClose: () => void;
 }) {
   const [type, setType] = useState<AccountType>(account?.type ?? "debit");
-  const [currency, setCurrency] = useState(account?.currency ?? "MXN");
+  const { profile } = useStore();
+  const [currency, setCurrency] = useState(account?.currency ?? profile.currency);
   // A saved name we know ("BBVA México") selects that institution; anything else is "Otra".
   const [institution, setInstitution] = useState(() =>
     account?.institution ? (findInstitution(account.institution)?.name ?? OTHER) : "",

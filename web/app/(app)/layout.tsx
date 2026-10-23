@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { Logo } from "@/components/logo";
 import { MobileNav, NavLinks } from "@/components/nav-links";
 import { UserMenu } from "@/components/user-menu";
-import { loadData } from "@/lib/data";
+import { getProfile, loadData } from "@/lib/data";
 import { StoreProvider } from "@/lib/store";
 import { createClient } from "@/lib/supabase";
 
@@ -12,8 +12,10 @@ async function User({ compact }: { compact?: boolean }) {
   // supabase-js reads Date.now() while building the client; keep it out of the prerender.
   await connection();
   const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  return <UserMenu email={data?.claims.email ?? ""} compact={compact} />;
+  const [{ data }, profile] = await Promise.all([supabase.auth.getClaims(), getProfile()]);
+  return (
+    <UserMenu email={data?.claims.email ?? ""} name={profile.display_name} compact={compact} />
+  );
 }
 
 async function Data({ children }: { children: React.ReactNode }) {

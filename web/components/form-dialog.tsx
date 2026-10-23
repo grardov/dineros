@@ -168,7 +168,7 @@ export function MoneyInput({
         autoComplete="off"
         placeholder="0.00"
         value={value}
-        className="pr-12 pl-6 tabular-nums"
+        className={`${currency ? "pr-12" : "pr-2.5"} pl-6 tabular-nums`}
         onChange={(e) => {
           const input = e.target;
           // Keep the caret after the same digits once the commas move around.

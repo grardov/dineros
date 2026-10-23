@@ -13,7 +13,7 @@ router = APIRouter(prefix="/transactions", tags=["transactions"])
 def list_transactions(
     session: SessionDep,
     account_id: uuid.UUID | None = None,
-    limit: int = Query(default=100, ge=1, le=500),
+    limit: int = Query(default=100, ge=1, le=100_000),  # the high end is for the CSV export
 ) -> list[Transaction]:
     query = select(Transaction)
     if account_id:

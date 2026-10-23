@@ -155,13 +155,16 @@ export default function Home() {
   const topCategories = [...byCategory].sort((a, b) => b[1] - a[1]).slice(0, 6);
   const maxCategory = topCategories[0]?.[1] ?? 0;
 
-  const todayLong = capitalize(
-    new Date(`${store.today}T00:00:00`).toLocaleDateString("es-MX", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    }),
-  );
+  const firstName = store.profile.display_name?.split(/\s+/)[0];
+  const todayLong =
+    (firstName ? `Hola, ${firstName} · ` : "") +
+    capitalize(
+      new Date(`${store.today}T00:00:00`).toLocaleDateString("es-MX", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      }),
+    );
 
   if (!store.accounts.length)
     return (

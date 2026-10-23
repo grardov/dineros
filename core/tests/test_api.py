@@ -298,3 +298,43 @@ def test_card_payment_counts_fijos_still_to_charge(client, new_user) -> None:
     assert payment["is_estimate"]
     # Next month's Netflix lands after this corte.
     assert by[(netflix["id"], str(next_month))]["fijo_charges"] == "0.00"
+
+
+def test_onboarding_and_delete_user(client, new_user) -> None:
+    h = new_user()
+    assert client.get("/profile/", headers=h).json()["onboarded_at"] is None
+    categories = client.get("/categories/", headers=h).json()
+    by_name = {c["name"]: c for c in categories}
+    body = {
+        "display_name": "Mariana",
+        "currency": "USD",
+        "account": {"name": "Nómina", "type": "debit", "opening_balance": "1000"},
+        "recurring": [
+            {
+                "name": "Renta",
+                "kind": "expense",
+                "amount": "8500",
+                "category_id": by_name["Renta"]["id"],
+                "day_of_month": 1,
+                "starts_on": str(date.today()),
+            }
+        ],
+        "remove_category_ids": [by_name["Vivienda"]["id"], by_name["Mascotas"]["id"]],
+    }
+    profile = client.post("/profile/onboarding", headers=h, json=body).json()
+    assert (profile["display_name"], profile["currency"]) == ("Mariana", "USD")
+    assert profile["onboarded_at"]
+    assert client.post("/profile/onboarding", headers=h, json=body).status_code == 409
+
+    (account,) = client.get("/accounts/", headers=h).json()
+    (fijo,) = client.get("/recurring/", headers=h).json()
+    # Removing Vivienda took its subcategories (Renta) along; the fijo just lost its category.
+    assert (fijo["account_id"], fijo["category_id"]) == (account["id"], None)
+    left = {c["name"] for c in client.get("/categories/", headers=h).json()}
+    assert not left & {"Vivienda", "Renta", "Mascotas", "Veterinario"}
+    assert len(left) == len(categories) - 2 - 4 - 2
+
+    assert client.delete("/profile/", headers=h).status_code == 204
+    # The JWT outlives the user, but there's nothing left behind it.
+    assert client.get("/accounts/", headers=h).json() == []
+    assert client.get("/profile/", headers=h).status_code == 404

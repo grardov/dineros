@@ -15,6 +15,8 @@ function useStoreValue(data: StoreData) {
 
   return useMemo(
     () => ({
+      email: data.email,
+      profile: data.profile,
       accounts: data.accounts,
       categories: data.categories,
       transactions: data.transactions, // newest first

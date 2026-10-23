@@ -39,7 +39,7 @@ export function Amount({
   );
 }
 
-const ICONS: Record<AccountType, typeof LandmarkIcon> = {
+export const ACCOUNT_ICONS: Record<AccountType, typeof LandmarkIcon> = {
   debit: LandmarkIcon,
   credit: CreditCardIcon,
   cash: BanknoteIcon,
@@ -64,7 +64,7 @@ export function AccountTile({ account, className }: { account: Account; classNam
         )}
       />
     );
-  const Icon = ICONS[account.type];
+  const Icon = ACCOUNT_ICONS[account.type];
   return (
     <span
       className={cn(

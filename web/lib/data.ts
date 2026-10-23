@@ -1,12 +1,16 @@
 import "server-only";
 
+import { redirect } from "next/navigation";
 import { connection } from "next/server";
+import { cache } from "react";
 
 import { api } from "@/lib/api";
+import { createClient } from "@/lib/supabase";
 import type {
   Account,
   Category,
   CreditCardStatement,
+  Profile,
   Recurring,
   RecurringOccurrence,
   Transaction,
@@ -20,6 +24,9 @@ const toNumbers = <T, K extends keyof T>(row: Wire<T, K>, keys: K[]) =>
     Object.entries(row).map(([k, v]) => [k, keys.includes(k as K) && v !== null ? Number(v) : v]),
   ) as T;
 
+// Shared by the layout's data and its user menu within a request.
+export const getProfile = cache(() => api<Profile>("/profile/"));
+
 type Balance = { account_id: string; balance: number; available_credit: number | null };
 
 // Everything the (app) pages read, fetched once per request as the signed-in user.
@@ -27,18 +34,22 @@ type Balance = { account_id: string; balance: number; available_credit: number |
 export async function loadData() {
   // supabase-js reads Date.now() while building the client; keep it out of the prerender.
   await connection();
-  const [accounts, categories, transactions, balances, recurring, occurrences] = await Promise.all([
-    api<Wire<Account, "opening_balance" | "last_statement_pending" | "credit_limit">[]>(
-      "/accounts/?include_archived=true",
-    ),
-    api<Category[]>("/categories/"),
-    api<Wire<Transaction, "amount">[]>("/transactions/?limit=500"),
-    api<Wire<Balance, "balance" | "available_credit">[]>("/accounts/balances/"),
-    api<Wire<Recurring, "amount">[]>("/recurring/"),
-    api<Wire<RecurringOccurrence, "expected_amount" | "paid_amount" | "fijo_charges">[]>(
-      "/recurring/occurrences/",
-    ),
-  ]);
+  const profile = await getProfile();
+  if (!profile.onboarded_at) redirect("/onboarding");
+  const [claims, accounts, categories, transactions, balances, recurring, occurrences] =
+    await Promise.all([
+      createClient().then((s) => s.auth.getClaims()),
+      api<Wire<Account, "opening_balance" | "last_statement_pending" | "credit_limit">[]>(
+        "/accounts/?include_archived=true",
+      ),
+      api<Category[]>("/categories/"),
+      api<Wire<Transaction, "amount">[]>("/transactions/?limit=500"),
+      api<Wire<Balance, "balance" | "available_credit">[]>("/accounts/balances/"),
+      api<Wire<Recurring, "amount">[]>("/recurring/"),
+      api<Wire<RecurringOccurrence, "expected_amount" | "paid_amount" | "fijo_charges">[]>(
+        "/recurring/occurrences/",
+      ),
+    ]);
   const credit = accounts.filter((a) => a.type === "credit");
   const statements = await Promise.all(
     credit.map((a) =>
@@ -49,6 +60,8 @@ export async function loadData() {
   );
 
   return {
+    email: claims.data?.claims.email ?? "",
+    profile,
     accounts: accounts.map((a) =>
       toNumbers(a, ["opening_balance", "last_statement_pending", "credit_limit"]),
     ),
