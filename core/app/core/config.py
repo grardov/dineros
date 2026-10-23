@@ -5,8 +5,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True, extra="ignore")
 
-    PROJECT_NAME: str = "Dineros"
-    API_V1_STR: str = "/api/v1"
     # Supabase local (`pnpm db:start`). In the cloud use the "Session pooler" connection string.
     DATABASE_URL: PostgresDsn = "postgresql+psycopg://postgres:postgres@127.0.0.1:55322/postgres"
     # Supabase Auth issues the JWTs; core verifies them against this project's public keys (JWKS).

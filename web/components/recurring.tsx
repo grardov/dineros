@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
 import { type Recurring, type RecurringOccurrence, money, signedMoney } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 export type Occurrence = RecurringOccurrence & { fijo: Recurring };
 

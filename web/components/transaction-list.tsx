@@ -4,12 +4,12 @@ import { ArrowRightIcon, MapPinIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 
 import { CategoryChip, TransactionIcon, useCategory } from "@/components/category-icon";
-import { dayMonth } from "@/components/finance";
+import { capitalize, dayMonth } from "@/components/finance";
 import { TransactionDialog } from "@/components/transaction-dialog";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { signedMoney, type Transaction, type TransactionKind } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 // Signed from the point of view of `accountId` when given: a transfer is money out of one account
 // and into the other. Without it a transfer is neither, so it has no sign.
@@ -19,8 +19,6 @@ export function signed(t: Transaction, accountId?: string) {
   if (!accountId) return null;
   return t.to_account_id === accountId ? t.amount : -t.amount;
 }
-
-const capitalize = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 function dayLabel(iso: string, today: string) {
   const d = new Date(`${iso}T00:00:00`);

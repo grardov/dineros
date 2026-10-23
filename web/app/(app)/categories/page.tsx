@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { CategoryDialog } from "@/components/category-dialog";
 import { CategoryIcon } from "@/components/category-icon";
-import { EmptyState, PageHeader } from "@/components/finance";
+import { EmptyState, monthName, PageHeader } from "@/components/finance";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,9 +21,6 @@ export default function CategoriesPage() {
   // A category to edit, or a new one (under parentId when adding a subcategory).
   const [editing, setEditing] = useState<{ category?: Category; parentId?: string } | null>(null);
   const month = store.today.slice(0, 7);
-  const monthName = new Date(`${store.today}T00:00:00`).toLocaleDateString("es-MX", {
-    month: "long",
-  });
 
   const byName = (a: Category, b: Category) => a.name.localeCompare(b.name);
   const childrenOf = (id: string) =>
@@ -136,7 +133,7 @@ export default function CategoriesPage() {
           >
             <span>Nombre</span>
             <span className="text-right max-sm:hidden">Movimientos</span>
-            <span className="text-right capitalize">{monthName}</span>
+            <span className="text-right">{monthName(month, false)}</span>
             <span />
           </div>
           {roots(kind)

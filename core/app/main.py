@@ -3,14 +3,10 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
 from app.api.main import api_router
-from app.core.config import settings
 
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
-)
+app = FastAPI(title="Dineros", openapi_url="/api/v1/openapi.json")
 
-app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(api_router, prefix="/api/v1")
 
 
 @app.exception_handler(IntegrityError)

@@ -4,7 +4,7 @@ import { ArrowLeftRightIcon } from "lucide-react";
 
 import { useStore } from "@/lib/store";
 import type { Transaction } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 // Eight hues at the same lightness and chroma, so no category outweighs another.
 const HUES = [140, 25, 230, 60, 95, 330, 280, 175];

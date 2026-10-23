@@ -15,7 +15,7 @@ import Link from "next/link";
 import { findInstitution } from "@/lib/institutions";
 import { useStore } from "@/lib/store";
 import { type Account, type AccountType, MINUS, money } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 // Large amounts: the cents go muted so the whole figure carries the weight.
 export function Amount({

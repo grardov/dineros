@@ -14,7 +14,7 @@ LOCAL_PUBLISHABLE_KEY = "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH"
 
 @pytest.fixture
 def client() -> TestClient:
-    return TestClient(app, base_url=f"http://test{settings.API_V1_STR}")
+    return TestClient(app, base_url="http://test/api/v1")
 
 
 @pytest.fixture
