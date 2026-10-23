@@ -49,6 +49,18 @@ Ramas: los PRs van a `staging`; `main` es producción.
   `supabase db push` (migraciones a producción) → `flyctl deploy` de `core`. Las migraciones van
   primero para que el código nuevo nunca corra contra un esquema viejo.
 - **web** se despliega solo con la integración Git de Vercel.
+- **Release:** al terminar el deploy, si la versión del `package.json` raíz no tiene release, crea
+  el tag `vX.Y.Z` y su GitHub Release con notas generadas.
+
+### Hacer un release
+
+```bash
+pnpm version minor --no-git-tag-version   # o patch / major, en staging
+git commit -am "Release v$(jq -r .version package.json)" && git push
+gh pr create --base main --head staging --title "Release v$(jq -r .version package.json)" --fill
+```
+
+Haz merge con **merge commit** (no squash) para que `staging` y `main` no diverjan.
 
 ### Setup inicial (una vez)
 

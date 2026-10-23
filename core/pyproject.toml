@@ -1,6 +1,7 @@
 [project]
 name = "core"
-version = "0.1.0"
+# uv requires a version; the app's release version lives in the root package.json.
+version = "0.0.0"
 description = "Dineros backend API"
 requires-python = ">=3.13"
 dependencies = [
