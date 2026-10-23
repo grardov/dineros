@@ -1,5 +1,10 @@
 from datetime import date, timedelta
 
+import httpx
+
+from app.core.config import settings
+from tests.conftest import LOCAL_PUBLISHABLE_KEY
+
 
 def last_corte(day: int) -> date:
     today = date.today()
@@ -45,6 +50,20 @@ def test_users_only_see_and_touch_their_own_data(client, new_user) -> None:
         json=tx | {"account_id": own["id"], "category_id": food["id"]},
     )
     assert r.status_code == 409
+
+
+def test_data_api_is_closed(client, new_user) -> None:
+    # Only core reaches the data: a user JWT gets nothing from Supabase's REST API.
+    h = new_user()
+    client.post("/accounts/", headers=h, json={"name": "Nómina", "type": "debit"})
+    for path in ("accounts", "account_balances", "profiles", "rpc/delete_current_user"):
+        r = httpx.post if path.startswith("rpc/") else httpx.get
+        res = r(
+            f"{settings.SUPABASE_URL}/rest/v1/{path}",
+            headers=h | {"apikey": LOCAL_PUBLISHABLE_KEY},
+        )
+        assert res.status_code in (401, 403, 404), (path, res.status_code, res.text)
+    assert client.get("/profile/", headers=h).status_code == 200
 
 
 def test_credit_card_statement(client, new_user) -> None:

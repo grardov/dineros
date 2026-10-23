@@ -7,7 +7,8 @@ import {
   LoaderCircleIcon,
   MailCheckIcon,
 } from "lucide-react";
-import { useState } from "react";
+import Script from "next/script";
+import { useEffect, useRef, useState } from "react";
 
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
@@ -87,7 +88,6 @@ export function PasswordInput(props: React.ComponentProps<"input">) {
         <Input
           name="password"
           required
-          minLength={6}
           {...props}
           type={visible ? "text" : "password"}
           onKeyUp={(e) => setCapsLock(e.getModifierState("CapsLock"))}
@@ -111,6 +111,47 @@ export function PasswordInput(props: React.ComponentProps<"input">) {
           Bloq Mayús está activado.
         </FieldDescription>
       )}
+    </>
+  );
+}
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (el: HTMLElement, options: Record<string, unknown>) => string;
+      reset: (id: string) => void;
+    };
+  }
+}
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+// Cloudflare Turnstile, only when NEXT_PUBLIC_TURNSTILE_SITE_KEY is set (with captcha enabled in
+// Supabase Auth, which checks the token). It adds the token to the form as cf-turnstile-response
+// and only shows itself when it needs the person to click.
+export function Captcha({ resetOn }: { resetOn: unknown }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const id = useRef<string>(undefined);
+  // A token works once: get a new one after every submit.
+  useEffect(() => {
+    if (id.current) window.turnstile?.reset(id.current);
+  }, [resetOn]);
+  if (!TURNSTILE_SITE_KEY) return null;
+  return (
+    <>
+      <Script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+        onReady={() => {
+          if (ref.current && !ref.current.childElementCount) {
+            id.current = window.turnstile?.render(ref.current, {
+              sitekey: TURNSTILE_SITE_KEY,
+              appearance: "interaction-only",
+              size: "flexible",
+            });
+          }
+        }}
+      />
+      <div ref={ref} />
     </>
   );
 }

@@ -5,7 +5,9 @@ import uuid
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from enum import StrEnum
+from typing import Annotated
 
+from pydantic import StringConstraints
 from sqlalchemy import ARRAY, String
 from sqlmodel import Field, SQLModel
 
@@ -79,8 +81,10 @@ class TransactionCreate(SQLModel):
     to_account_id: uuid.UUID | None = None
     category_id: uuid.UUID | None = None
     description: str | None = Field(default=None, max_length=200)
-    notes: str | None = None
-    tags: list[str] = Field(default_factory=list, sa_type=ARRAY(String))
+    notes: str | None = Field(default=None, max_length=2000)
+    tags: list[Annotated[str, StringConstraints(max_length=50)]] = Field(
+        default_factory=list, max_length=20, sa_type=ARRAY(String)
+    )
     location_name: str | None = Field(default=None, max_length=200)
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = Field(default=None, ge=-180, le=180)

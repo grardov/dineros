@@ -8,7 +8,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input";
 
 import { authenticate, type Intent } from "../actions";
-import { AuthCard, FormAlert, PasswordInput, SubmitButton } from "../auth-ui";
+import { AuthCard, Captcha, FormAlert, PasswordInput, SubmitButton } from "../auth-ui";
 
 const copy = {
   signin: {
@@ -84,11 +84,13 @@ export function LoginForm() {
             <PasswordInput
               id="password"
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              // Only new passwords: older accounts may have shorter ones.
+              minLength={mode === "signup" ? 8 : undefined}
               aria-invalid={!!result?.error || undefined}
               aria-describedby={mode === "signup" ? "password-hint" : undefined}
             />
             {mode === "signup" && (
-              <FieldDescription id="password-hint">Mínimo 6 caracteres.</FieldDescription>
+              <FieldDescription id="password-hint">Mínimo 8 caracteres.</FieldDescription>
             )}
             {mode === "signin" && (
               <Link
@@ -100,6 +102,7 @@ export function LoginForm() {
             )}
           </Field>
 
+          <Captcha resetOn={state} />
           <SubmitButton pending={pending} pendingLabel={t.pending}>
             {t.submit}
           </SubmitButton>
