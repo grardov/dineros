@@ -72,6 +72,8 @@ export function RecurringDialog({
       open={open}
       onClose={onClose}
       title={recurring ? "Editar fijo" : "Nuevo fijo"}
+      saved={recurring ? "Fijo actualizado" : "Fijo creado"}
+      deleted="Fijo eliminado"
       onDelete={recurring && (() => deleteRecurring(recurring.id))}
       onSubmit={(d) => {
         const account_id = text(d, "account_id")!;

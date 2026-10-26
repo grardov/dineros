@@ -24,15 +24,18 @@ import {
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/toast";
 
 // Shared shell for the create/edit dialogs. onSubmit/onDelete resolve to an error message to keep
-// it open, or null to close.
+// it open, or null to close and toast `saved`/`deleted`.
 export function FormDialog({
   open,
   onClose,
   title,
   onSubmit,
   onDelete,
+  saved,
+  deleted,
   submitLabel = "Guardar",
   children,
 }: {
@@ -41,6 +44,8 @@ export function FormDialog({
   title: string;
   onSubmit: (data: FormData) => Promise<string | null> | string | null;
   onDelete?: () => Promise<string | null>;
+  saved: string;
+  deleted?: string;
   submitLabel?: string;
   children: React.ReactNode;
 }) {
@@ -51,11 +56,12 @@ export function FormDialog({
     setError(null);
     onClose();
   };
-  const run = (fn: () => Promise<string | null> | string | null) =>
+  const run = (fn: () => Promise<string | null> | string | null, done?: string) =>
     startTransition(async () => {
       const err = await fn();
-      if (err) setError(err);
-      else close();
+      if (err) return setError(err);
+      close();
+      if (done) toast.add({ title: done, type: "success" });
     });
 
   return (
@@ -67,7 +73,7 @@ export function FormDialog({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            run(() => onSubmit(new FormData(e.currentTarget)));
+            run(() => onSubmit(new FormData(e.currentTarget)), saved);
           }}
           className="flex flex-col gap-4"
         >
@@ -105,7 +111,7 @@ export function FormDialog({
                       variant="destructive"
                       onClick={() => {
                         setConfirming(false);
-                        run(onDelete);
+                        run(onDelete, deleted);
                       }}
                     >
                       Eliminar

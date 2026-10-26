@@ -194,6 +194,16 @@ export function TransactionDialog({
               : "Nuevo movimiento"
       }
       submitLabel={kind === "transfer" && !transaction ? "Transferir" : "Guardar"}
+      saved={
+        transaction
+          ? "Movimiento actualizado"
+          : initial?.recurring_id
+            ? "Pago registrado"
+            : kind === "transfer"
+              ? "Transferencia registrada"
+              : "Movimiento registrado"
+      }
+      deleted="Movimiento eliminado"
       onDelete={transaction && (() => deleteTransaction(transaction.id))}
       onSubmit={(d) => {
         const account_id = text(d, "account_id")!;
