@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import { signOut } from "@/app/(auth)/actions";
 import { Logo } from "@/components/logo";
+import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/api";
 import { getProfile } from "@/lib/data";
 import { createClient } from "@/lib/supabase";
@@ -17,7 +18,7 @@ export const metadata: Metadata = { title: "Bienvenida · Dineros" };
 // First visit after signing up; the (app) layout sends anyone not onboarded here.
 export default function OnboardingPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<Spinner>Preparando tu cuenta…</Spinner>}>
       <Onboarding />
     </Suspense>
   );
