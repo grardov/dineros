@@ -24,6 +24,7 @@ import {
   daysUntil,
   useCredit,
 } from "@/components/finance";
+import { CopyRow, ShareButtons, shareText } from "@/components/share";
 import { NewTransactionButton, TransactionRows } from "@/components/transaction-list";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -179,6 +180,54 @@ function CreditSummary({ account }: { account: Account }) {
   );
 }
 
+const groupsOf4 = (n: string) => n.replace(/(\d{4})(?=\d)/g, "$1 ");
+
+// CLABE, account and card number, ready to send to whoever asked for them.
+function TransferData({ account, onEdit }: { account: Account; onEdit: () => void }) {
+  const { profile } = useStore();
+  const { clabe, account_number, card_number } = account;
+  if (!clabe && !account_number && !card_number)
+    return (
+      <Card className="flex-row flex-wrap items-center justify-between gap-3 px-5 py-4 text-[0.8125rem] text-muted-foreground">
+        Guarda la CLABE y el número de cuenta para compartirlos sin abrir la app del banco.
+        <Button variant="outline" size="sm" onClick={onEdit}>
+          Agregar datos
+        </Button>
+      </Card>
+    );
+  const card = card_number && groupsOf4(card_number);
+  const text = shareText([account.institution, account.name].filter(Boolean).join(" · "), [
+    ["Titular", profile.legal_name ?? profile.display_name],
+    ["CLABE", clabe],
+    ["Cuenta", account_number],
+    ["Tarjeta", card],
+  ]);
+  return (
+    <Card className="gap-0 py-0">
+      <CardHeader className="flex flex-wrap items-center justify-between gap-2 border-b py-3.5!">
+        <CardTitle>Datos para transferencias</CardTitle>
+        <div className="flex gap-2">
+          <ShareButtons text={text} />
+        </div>
+      </CardHeader>
+      <div className="grid grid-cols-1 divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        {clabe && (
+          <CopyRow
+            label="CLABE"
+            value={clabe}
+            display={`${clabe.slice(0, 3)} ${clabe.slice(3, 6)} ${clabe.slice(6, 17)} ${clabe.slice(17)}`}
+          />
+        )}
+        {account_number && <CopyRow label="Número de cuenta" value={account_number} />}
+        {card_number && (
+          // Masked on screen; whoever asked gets all of it.
+          <CopyRow label="Tarjeta" value={card_number} display={`•••• ${card_number.slice(-4)}`} />
+        )}
+      </div>
+    </Card>
+  );
+}
+
 export default function AccountPage() {
   const { id } = useParams<{ id: string }>();
   const store = useStore();
@@ -300,6 +349,10 @@ export default function AccountPage() {
             </Stat>
           ))}
         </Card>
+      )}
+
+      {account.type !== "cash" && (
+        <TransferData account={account} onEdit={() => setEditingAccount(true)} />
       )}
 
       <Tabs defaultValue="movimientos" className="gap-4">

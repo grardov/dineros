@@ -74,7 +74,8 @@ export async function deleteRecurring(id: string) {
   return write(`/recurring/${id}`, { method: "DELETE" });
 }
 
-export async function saveProfile(body: Pick<Profile, "display_name" | "currency">) {
+// Only the fields sent change.
+export async function saveProfile(body: Partial<Omit<Profile, "onboarded_at" | "created_at">>) {
   return write("/profile/", { method: "PUT", body: JSON.stringify(body) });
 }
 

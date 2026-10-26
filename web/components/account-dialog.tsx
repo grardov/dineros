@@ -25,6 +25,15 @@ export const CURRENCIES: Record<string, string> = {
   EUR: "EUR — Euro",
 };
 
+// The 18th digit of a CLABE checks the other 17 (weights 3, 7, 1): catches a mistyped digit.
+export function validClabe(clabe: string) {
+  const sum = [...clabe.slice(0, 17)].reduce((s, d, i) => s + ((+d * [3, 7, 1][i % 3]) % 10), 0);
+  return /^\d{18}$/.test(clabe) && (10 - (sum % 10)) % 10 === +clabe[17];
+}
+
+// Pasted from the bank app with spaces or dashes: keep the digits.
+const digits = (d: FormData, key: string) => text(d, key)?.replace(/\D/g, "") || null;
+
 const BY_NAME = INSTITUTIONS.toSorted((a, b) => a.name.localeCompare(b.name, "es"));
 const OTHER = "__other";
 
@@ -45,6 +54,7 @@ export function AccountDialog({
     account?.institution ? (findInstitution(account.institution)?.name ?? OTHER) : "",
   );
   const credit = type === "credit";
+  const cash = type === "cash";
   // Live amounts for the "Disponible" hint under the credit limit.
   const [debt, setDebt] = useState(account ? Math.abs(account.opening_balance) : null);
   const [limit, setLimit] = useState(account?.credit_limit ?? null);
@@ -62,6 +72,14 @@ export function AccountDialog({
         if (limit === 0) return "El límite de crédito debe ser mayor a $0.";
         if (pending !== null && pending > opening)
           return "Lo que falta pagar del último corte no puede ser mayor que el saldo total.";
+        const [clabe, accountNumber, card] = cash
+          ? [null, null, null]
+          : [digits(d, "clabe"), digits(d, "account_number"), digits(d, "card_number")];
+        if (clabe && !validClabe(clabe)) return "La CLABE no es válida: revisa sus 18 dígitos.";
+        if (accountNumber && !/^\d{6,20}$/.test(accountNumber))
+          return "El número de cuenta debe tener entre 6 y 20 dígitos.";
+        if (card && !/^\d{15,16}$/.test(card))
+          return "El número de tarjeta debe tener 15 o 16 dígitos.";
         return saveAccount(account?.id, {
           archived_at: account?.archived_at ?? null,
           name: text(d, "name")!,
@@ -74,6 +92,9 @@ export function AccountDialog({
           credit_limit: limit,
           statement_day: credit ? num(d, "statement_day") : null,
           payment_due_day: credit ? num(d, "payment_due_day") : null,
+          clabe,
+          account_number: accountNumber,
+          card_number: card,
         });
       }}
     >
@@ -227,6 +248,54 @@ export function AccountDialog({
               />
             </Field>
           </div>
+        </>
+      )}
+      {!cash && (
+        <>
+          <p className="-mb-1 border-t pt-4 text-[0.8125rem] text-muted-foreground">
+            Opcional: para compartir tus datos cuando te pidan una transferencia, sin abrir la app
+            del banco.
+          </p>
+          <Field>
+            <FieldLabel htmlFor="clabe">CLABE</FieldLabel>
+            <Input
+              id="clabe"
+              name="clabe"
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={24}
+              placeholder="18 dígitos"
+              defaultValue={account?.clabe ?? ""}
+            />
+          </Field>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field>
+              <FieldLabel htmlFor="account_number">Número de cuenta</FieldLabel>
+              <Input
+                id="account_number"
+                name="account_number"
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={24}
+                defaultValue={account?.account_number ?? ""}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="card_number">Número de tarjeta</FieldLabel>
+              <Input
+                id="card_number"
+                name="card_number"
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={20}
+                placeholder="16 dígitos"
+                defaultValue={account?.card_number ?? ""}
+              />
+            </Field>
+          </div>
+          <FieldDescription className="-mt-2">
+            Nunca guardamos la fecha de vencimiento ni el CVV.
+          </FieldDescription>
         </>
       )}
     </FormDialog>

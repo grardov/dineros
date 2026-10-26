@@ -36,6 +36,10 @@ class AccountCreate(SQLModel):
     credit_limit: Decimal | None = Field(default=None, gt=0, max_digits=14, decimal_places=2)
     statement_day: int | None = Field(default=None, ge=1, le=31)
     payment_due_day: int | None = Field(default=None, ge=1, le=31)
+    # To receive transfers; never cash accounts.
+    clabe: str | None = Field(default=None, schema_extra={"pattern": r"^\d{18}$"})
+    account_number: str | None = Field(default=None, schema_extra={"pattern": r"^\d{6,20}$"})
+    card_number: str | None = Field(default=None, schema_extra={"pattern": r"^\d{15,16}$"})
     archived_at: datetime | None = None
 
 
@@ -124,6 +128,14 @@ class Recurring(RecurringCreate, table=True):
 class ProfileUpdate(SQLModel):
     display_name: str | None = Field(default=None, min_length=1, max_length=100)
     currency: str = Field(default="MXN", min_length=3, max_length=3)  # for new accounts
+    # Datos fiscales for a factura; regime and use are SAT catalog codes.
+    rfc: str | None = Field(
+        default=None, schema_extra={"pattern": r"^[A-ZÑ&]{3,4}\d{6}[A-Z\d]{3}$"}
+    )
+    legal_name: str | None = Field(default=None, min_length=1, max_length=254)
+    tax_zip: str | None = Field(default=None, schema_extra={"pattern": r"^\d{5}$"})
+    tax_regime: str | None = Field(default=None, schema_extra={"pattern": r"^\d{3}$"})
+    cfdi_use: str | None = Field(default=None, schema_extra={"pattern": r"^[A-Z]{1,2}\d{2}$"})
 
 
 class Profile(ProfileUpdate, table=True):
