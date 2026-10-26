@@ -90,7 +90,8 @@ export default function RecurringPage() {
             <h2 className="text-base leading-tight font-semibold tracking-tight">
               {monthName(next.month)} · proyección
             </h2>
-            <Card className="grid grid-cols-3 gap-0 p-0">
+            {/* Phones: what's left gets a row of its own; three amounts don't fit side by side. */}
+            <Card className="grid grid-cols-2 gap-0 p-0 sm:grid-cols-3">
               {[
                 ["Entradas", next.income, "text-income"],
                 ["Salidas", -next.out, "text-expense"],
@@ -101,7 +102,7 @@ export default function RecurringPage() {
                 <Stat
                   key={label as string}
                   label={label}
-                  className="border-r border-muted px-3 py-3.5 last:border-r-0 sm:px-4 sm:py-4 md:px-5.5"
+                  className="border-r border-muted px-3 py-3.5 last:border-r-0 max-sm:nth-2:border-r-0 max-sm:last:col-span-2 max-sm:last:border-t sm:px-4 sm:py-4 md:px-5.5"
                 >
                   <span
                     className={`text-[15px] font-semibold whitespace-nowrap tabular-nums sm:text-lg md:text-xl ${color}`}

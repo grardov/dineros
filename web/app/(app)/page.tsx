@@ -223,7 +223,7 @@ export default function Home() {
             >
               <CountUpAmount
                 value={assets + debts}
-                className="text-[34px] leading-none md:text-[26px]"
+                className="text-[28px] leading-none min-[375px]:text-[34px] md:text-[26px]"
                 centsClassName="text-subtle max-md:text-primary-foreground/60"
                 deltaClassName="max-md:text-primary-foreground"
               />
@@ -233,12 +233,13 @@ export default function Home() {
             </Stat>
           </CardContent>
         </Card>
-        <Card>
+        {/* Under 360px half a row can't hold a five-digit amount. */}
+        <Card className="max-[359px]:col-span-2">
           <CardContent>
             <Stat label="Ingresos del mes">
               <Amount
                 value={now.income}
-                className="text-xl leading-none text-income md:text-[26px]"
+                className="text-lg leading-none text-income sm:text-xl md:text-[26px]"
                 centsClassName="opacity-55"
               />
               <Delta
@@ -249,12 +250,12 @@ export default function Home() {
             </Stat>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="max-[359px]:col-span-2">
           <CardContent>
             <Stat label="Gastos del mes">
               <Amount
                 value={now.expense}
-                className="text-xl leading-none text-expense md:text-[26px]"
+                className="text-lg leading-none text-expense sm:text-xl md:text-[26px]"
                 centsClassName="opacity-55"
               />
               <Delta
@@ -293,7 +294,7 @@ export default function Home() {
         </Card>
       </div>
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
         <Card className="gap-1 pb-1">
           <CardHeader className="flex items-center justify-between">
             <CardTitle>Movimientos recientes</CardTitle>

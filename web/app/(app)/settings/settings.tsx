@@ -96,7 +96,7 @@ export function Settings() {
   return (
     <>
       <PageHeader eyebrow="Mi cuenta" title="Ajustes" />
-      <div className="grid gap-x-10 gap-y-3 md:grid-cols-[minmax(0,260px)_minmax(0,640px)] md:gap-y-5">
+      <div className="grid grid-cols-1 gap-x-10 gap-y-3 md:grid-cols-[minmax(0,260px)_minmax(0,640px)] md:gap-y-5">
         <Section title="Perfil" description="Cómo apareces en Dineros.">
           <form
             onSubmit={(e) => {

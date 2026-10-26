@@ -99,7 +99,11 @@ export default function TransactionsPage() {
         >
           <TabsList className="max-sm:w-full">
             {Object.entries(KINDS).map(([value, label]) => (
-              <TabsTrigger key={value} value={value} className="px-3 text-[0.8125rem]">
+              <TabsTrigger
+                key={value}
+                value={value}
+                className="px-3 text-[0.8125rem] max-[359px]:px-2 max-[359px]:text-xs"
+              >
                 {label}
               </TabsTrigger>
             ))}

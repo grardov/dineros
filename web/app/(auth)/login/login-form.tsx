@@ -93,7 +93,7 @@ export function LoginForm() {
             {mode === "signin" && (
               <Link
                 href="/login/forgot-password"
-                className="absolute top-0 right-0 w-auto! text-sm leading-snug text-primary underline-offset-4 hover:underline"
+                className="absolute top-0 right-0 w-auto! text-sm leading-snug text-primary underline-offset-4 hover:underline max-[359px]:text-xs"
               >
                 ¿Olvidaste tu contraseña?
               </Link>

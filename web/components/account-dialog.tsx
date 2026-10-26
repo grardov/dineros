@@ -88,7 +88,7 @@ export function AccountDialog({
           defaultValue={account?.name}
         />
       </Field>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="type">Tipo</FieldLabel>
           <NativeSelect
@@ -201,7 +201,7 @@ export function AccountDialog({
               tu saldo total.
             </FieldDescription>
           </Field>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 items-end gap-4">
             <Field>
               <FieldLabel htmlFor="statement_day">Día de corte</FieldLabel>
               <Input

@@ -111,7 +111,7 @@ export function RecurringDialog({
         />
       </Field>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="account_id">
             {kind === "income" ? "Llega a" : kind === "transfer" ? "Desde" : "Se paga desde"}
@@ -211,7 +211,7 @@ export function RecurringDialog({
         </>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="starts_on">Primer mes</FieldLabel>
           <Input
