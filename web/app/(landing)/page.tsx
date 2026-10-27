@@ -15,7 +15,6 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { cn } from "cn";
 import Link from "next/link";
 
-import { Amount } from "@/components/finance";
 import { Logo } from "@/components/logo";
 import { buttonVariants } from "@/components/ui/button";
 import { money } from "@/lib/types";
@@ -112,6 +111,26 @@ const container = "mx-auto w-full max-w-290 px-4 sm:px-6";
 const feature = "grid grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] items-center gap-12";
 const panel = "rounded-2xl border bg-background p-3 sm:p-6";
 const card = "rounded-xl border bg-card p-4.5";
+
+// The app's Amount (muted cents) without its store: the demo figures have nothing to hide.
+function Amount({
+  value,
+  className,
+  centsClassName = "text-subtle",
+}: {
+  value: number;
+  className?: string;
+  centsClassName?: string;
+}) {
+  const s = money(value);
+  const dot = s.lastIndexOf(".");
+  return (
+    <span className={cn("font-semibold tracking-tight tabular-nums", className)}>
+      {s.slice(0, dot)}
+      <span className={centsClassName}>{s.slice(dot)}</span>
+    </span>
+  );
+}
 
 function FeatureText({
   eyebrow,
