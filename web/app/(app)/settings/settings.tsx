@@ -20,7 +20,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { toast } from "@/components/ui/toast";
@@ -29,19 +29,17 @@ import { useStore } from "@/lib/store";
 import { CFDI_USES, type Profile, TAX_REGIMES } from "@/lib/types";
 
 function Section({
-  id,
   title,
   description,
   children,
 }: {
-  id?: string;
   title: string;
   description: string;
   children: React.ReactNode;
 }) {
   return (
     <>
-      <div id={id} className="flex scroll-mt-6 flex-col gap-1 md:pt-1">
+      <div className="flex flex-col gap-1 md:pt-1">
         <h2 className="font-heading text-base font-semibold tracking-tight">{title}</h2>
         <p className="text-[0.8125rem] text-pretty text-muted-foreground">{description}</p>
       </div>
@@ -161,14 +159,6 @@ export function Settings() {
         </Section>
 
         <Section
-          id="salud"
-          title="Salud financiera"
-          description="Tu regla para repartir lo que ganas: necesidades, deseos y ahorro."
-        >
-          <HealthRule profile={profile} save={save} pending={pending} />
-        </Section>
-
-        <Section
           title="Datos fiscales"
           description="Para pedir factura: compártelos en vez de dictarlos."
         >
@@ -220,87 +210,6 @@ export function Settings() {
         </Section>
       </div>
     </>
-  );
-}
-
-const RULE = [
-  ["needs_pct", "Necesidades"],
-  ["wants_pct", "Deseos"],
-  ["savings_pct", "Ahorro"],
-] as const;
-
-function HealthRule({
-  profile,
-  save,
-  pending,
-}: {
-  profile: Profile;
-  save: (patch: Parameters<typeof saveProfile>[0]) => void;
-  pending: boolean;
-}) {
-  const [rule, setRule] = useState({
-    needs_pct: profile.needs_pct,
-    wants_pct: profile.wants_pct,
-    savings_pct: profile.savings_pct,
-    emergency_months: profile.emergency_months,
-  });
-  const total = rule.needs_pct + rule.wants_pct + rule.savings_pct;
-  const dirty = Object.entries(rule).some(([k, v]) => v !== profile[k as keyof typeof rule]);
-  const set = (k: keyof typeof rule) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setRule({ ...rule, [k]: e.target.valueAsNumber || 0 });
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (dirty && total === 100) save(rule);
-      }}
-    >
-      <div className="flex flex-col gap-4 p-5">
-        <div className="grid grid-cols-3 gap-3">
-          {RULE.map(([k, name]) => (
-            <Field key={k}>
-              <FieldLabel htmlFor={k}>{name} (%)</FieldLabel>
-              <Input
-                id={k}
-                type="number"
-                inputMode="numeric"
-                min={0}
-                max={100}
-                required
-                value={rule[k]}
-                onChange={set(k)}
-              />
-            </Field>
-          ))}
-        </div>
-        <Field>
-          <FieldLabel htmlFor="emergency_months">Fondo de emergencia (meses)</FieldLabel>
-          <Input
-            id="emergency_months"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={24}
-            required
-            className="w-28"
-            value={rule.emergency_months}
-            onChange={set("emergency_months")}
-          />
-          <FieldDescription>Cuántos meses de necesidades quieres tener guardados.</FieldDescription>
-        </Field>
-      </div>
-      <div className="flex items-center justify-between gap-3 border-t bg-sidebar px-5 py-3.5">
-        <span
-          className={`text-[0.8125rem] tabular-nums ${total === 100 ? "text-muted-foreground" : "text-destructive"}`}
-        >
-          {total === 100 ? "Suman 100%" : `Suman ${total}%: deben sumar 100%`}
-        </span>
-        <Button type="submit" disabled={!dirty || total !== 100 || pending}>
-          {pending && <LoaderCircleIcon className="animate-spin" />}
-          Guardar
-        </Button>
-      </div>
-    </form>
   );
 }
 

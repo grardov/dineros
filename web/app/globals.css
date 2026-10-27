@@ -217,6 +217,35 @@
   }
 }
 
+/* A native range slider whose track fills up to the value: set --fill (a %) and --range (a color). */
+@utility range {
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(to right, var(--range) var(--fill), var(--muted) var(--fill));
+  cursor: pointer;
+  &::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    background: var(--card);
+    border: 2px solid var(--range);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.15);
+  }
+  &::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 9999px;
+    background: var(--card);
+    border: 2px solid var(--range);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 4px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,

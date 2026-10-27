@@ -5,7 +5,6 @@ import { useState } from "react";
 
 import {
   MonthPicker,
-  MoreLink,
   PageHeader,
   UtilizationBar,
   monthName,
@@ -16,6 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
 import type { MonthlyTotal } from "@/lib/types";
 import { cn } from "cn";
+
+import { RuleDialog } from "./rule-dialog";
 
 type Tone = "good" | "warn" | "bad";
 const TONES: Record<Tone, { label: string; badge: "income" | "warning" | "expense"; bar: string }> =
@@ -115,6 +116,7 @@ export function Health({ totals }: { totals: MonthlyTotal[] }) {
   const thisMonth = store.today.slice(0, 7);
   const first = shiftMonth(thisMonth, -5);
   const [month, setMonth] = useState(thisMonth);
+  const [editingRule, setEditingRule] = useState(false);
 
   const of = (ym: string) => {
     const rows = totals.filter((t) => t.month.startsWith(ym));
@@ -179,7 +181,13 @@ export function Health({ totals }: { totals: MonthlyTotal[] }) {
         <Card>
           <CardHeader className="flex items-center justify-between">
             <CardTitle>Cómo repartiste {monthLabel}</CardTitle>
-            <MoreLink href="/settings#salud">Cambiar regla</MoreLink>
+            <button
+              type="button"
+              onClick={() => setEditingRule(true)}
+              className="text-[0.8125rem] font-medium whitespace-nowrap text-primary hover:text-accent-foreground"
+            >
+              Ajustar regla
+            </button>
           </CardHeader>
           <CardContent className="flex flex-col gap-5">
             {now.income ? (
@@ -393,6 +401,7 @@ export function Health({ totals }: { totals: MonthlyTotal[] }) {
           </span>
         </Indicator>
       </div>
+      {editingRule && <RuleDialog income={now.income} onClose={() => setEditingRule(false)} />}
     </>
   );
 }
