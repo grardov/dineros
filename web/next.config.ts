@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  // Which deploy this build is, inlined into client and server; /version serves the live one.
+  env: { APP_VERSION: process.env.VERCEL_DEPLOYMENT_ID ?? "dev" },
   partialPrefetching: true,
   // Local Supabase's site_url is 127.0.0.1:3000, so auth email links can land there in dev.
   allowedDevOrigins: ["127.0.0.1"],

@@ -22,6 +22,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { toast } from "@/components/ui/toast";
 import { deleteUser, saveProfile } from "@/lib/actions";
 import { useStore } from "@/lib/store";
 
@@ -72,8 +73,6 @@ function Row({
 export function Settings() {
   const { email, profile } = useStore();
   const [name, setName] = useState(profile.display_name ?? "");
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [reset, requestReset, resetting] = useActionState(requestPasswordReset, null);
   const dirty = name.trim() !== "" && name.trim() !== profile.display_name;
@@ -89,8 +88,9 @@ export function Settings() {
         currency: profile.currency,
         ...patch,
       });
-      setError(err);
-      setSaved(!err);
+      toast.add(
+        err ? { title: err, type: "error" } : { title: "Cambios guardados", type: "success" },
+      );
     });
 
   return (
@@ -125,10 +125,7 @@ export function Settings() {
                   id="display_name"
                   maxLength={100}
                   value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    setSaved(false);
-                  }}
+                  onChange={(e) => setName(e.target.value)}
                 />
               </Field>
               <Field>
@@ -137,16 +134,6 @@ export function Settings() {
               </Field>
             </div>
             <div className="flex items-center justify-end gap-3 border-t bg-sidebar px-5 py-3.5">
-              {error && (
-                <span role="alert" className="text-[0.8125rem] text-destructive">
-                  {error}
-                </span>
-              )}
-              {saved && (
-                <span role="status" className="text-[0.8125rem] text-income">
-                  Cambios guardados
-                </span>
-              )}
               <Button type="submit" disabled={!dirty || pending}>
                 {pending && <LoaderCircleIcon className="animate-spin" />}
                 Guardar
