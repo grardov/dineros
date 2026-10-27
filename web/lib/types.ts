@@ -39,6 +39,7 @@ export type Profile = {
   wants_pct: number;
   savings_pct: number;
   emergency_months: number;
+  health_started_at: string | null; // null until they set up their rule
   onboarded_at: string | null; // null until onboarding is done
   created_at: string;
 };

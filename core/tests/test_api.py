@@ -367,11 +367,14 @@ def test_financial_health(client, new_user) -> None:
     h = new_user()
     profile = client.get("/profile/", headers=h).json()
     assert [profile[k] for k in ("needs_pct", "wants_pct", "savings_pct")] == [50, 30, 20]
+    assert profile["health_started_at"] is None
     # The rule has to add up to 100.
     bad = {"needs_pct": 60, "wants_pct": 30, "savings_pct": 20}
     assert client.put("/profile/", headers=h, json=bad).status_code == 409
     rule = {"needs_pct": 60, "wants_pct": 20, "savings_pct": 20, "emergency_months": 3}
-    assert client.put("/profile/", headers=h, json=rule).json()["needs_pct"] == 60
+    started = {"health_started_at": "2026-10-27T12:00:00Z"}
+    profile = client.put("/profile/", headers=h, json=rule | started).json()
+    assert profile["needs_pct"] == 60 and profile["health_started_at"].startswith("2026-10-27")
 
     # The default categories come classified; subcategories follow their parent.
     categories = client.get("/categories/", headers=h).json()

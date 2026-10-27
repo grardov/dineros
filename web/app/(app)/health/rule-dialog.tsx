@@ -30,7 +30,16 @@ function rebalance(rule: Rule, key: keyof Rule, value: number): Rule {
 }
 
 // The rule as a pie, set with one slider per share; `income` shows what each share means in money.
-export function RuleDialog({ income, onClose }: { income: number; onClose: () => void }) {
+// With `activate`, saving it is what turns Salud financiera on.
+export function RuleDialog({
+  income,
+  activate,
+  onClose,
+}: {
+  income: number;
+  activate?: boolean;
+  onClose: () => void;
+}) {
   const store = useStore();
   const { profile } = store;
   const [rule, setRule] = useState<Rule>({
@@ -50,9 +59,16 @@ export function RuleDialog({ income, onClose }: { income: number; onClose: () =>
     <FormDialog
       open
       onClose={onClose}
-      title="Tu regla"
-      saved="Regla actualizada"
-      onSubmit={() => saveProfile({ ...rule, emergency_months: months })}
+      title={activate ? "Arma tu regla" : "Tu regla"}
+      submitLabel={activate ? "Activar" : "Guardar"}
+      saved={activate ? "Salud financiera activada" : "Regla actualizada"}
+      onSubmit={() =>
+        saveProfile({
+          ...rule,
+          emergency_months: months,
+          ...(activate && { health_started_at: new Date().toISOString() }),
+        })
+      }
     >
       <div className="flex items-center gap-5">
         <div

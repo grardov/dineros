@@ -18,6 +18,7 @@ import { cn } from "cn";
 
 import { SavingsCalculator } from "./calculator";
 import { RuleDialog } from "./rule-dialog";
+import { HealthSetup } from "./setup";
 
 type Tone = "good" | "warn" | "bad";
 const TONES: Record<Tone, { label: string; badge: "income" | "warning" | "expense" }> = {
@@ -176,6 +177,9 @@ export function Health({ totals }: { totals: MonthlyTotal[] }) {
     .reduce((s, r) => s + (r.amount ?? 0) / r.every_months, 0);
 
   const monthLabel = monthName(month, false).toLowerCase();
+
+  // Nothing to measure against until they set up their rule.
+  if (!profile.health_started_at) return <HealthSetup income={typicalIncome} />;
 
   return (
     <>

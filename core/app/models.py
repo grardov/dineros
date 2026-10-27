@@ -158,6 +158,7 @@ class ProfileUpdate(SQLModel):
     wants_pct: int = Field(default=30, ge=0, le=100)
     savings_pct: int = Field(default=20, ge=0, le=100)
     emergency_months: int = Field(default=6, ge=1, le=24)
+    health_started_at: datetime | None = None  # None until they set up their rule
 
 
 class Profile(ProfileUpdate, table=True):
