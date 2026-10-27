@@ -11,10 +11,10 @@ const RULE = [
     key: "needs_pct",
     label: "Necesidades",
     hint: "Vivienda, súper, servicios…",
-    color: "var(--chart-1)",
+    color: "var(--needs)",
   },
-  { key: "wants_pct", label: "Deseos", hint: "Restaurantes, viajes…", color: "var(--chart-2)" },
-  { key: "savings_pct", label: "Ahorro", hint: "Lo que te queda", color: "var(--chart-3)" },
+  { key: "wants_pct", label: "Deseos", hint: "Restaurantes, viajes…", color: "var(--wants)" },
+  { key: "savings_pct", label: "Ahorro", hint: "Lo que te queda", color: "var(--savings)" },
 ] as const;
 
 type Rule = Record<(typeof RULE)[number]["key"], number>;

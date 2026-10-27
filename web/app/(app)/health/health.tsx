@@ -16,15 +16,15 @@ import { useStore } from "@/lib/store";
 import type { MonthlyTotal } from "@/lib/types";
 import { cn } from "cn";
 
+import { SavingsCalculator } from "./calculator";
 import { RuleDialog } from "./rule-dialog";
 
 type Tone = "good" | "warn" | "bad";
-const TONES: Record<Tone, { label: string; badge: "income" | "warning" | "expense"; bar: string }> =
-  {
-    good: { label: "Bien", badge: "income", bar: "bg-income" },
-    warn: { label: "Cerca", badge: "warning", bar: "bg-warning" },
-    bad: { label: "Revisa", badge: "expense", bar: "bg-expense" },
-  };
+const TONES: Record<Tone, { label: string; badge: "income" | "warning" | "expense" }> = {
+  good: { label: "Bien", badge: "income" },
+  warn: { label: "Cerca", badge: "warning" },
+  bad: { label: "Revisa", badge: "expense" },
+};
 // Within 5 points of the goal is "close".
 const atMost = (v: number, max: number): Tone =>
   v <= max ? "good" : v <= max + 5 ? "warn" : "bad";
@@ -38,9 +38,11 @@ function Status({ tone }: { tone: Tone | null }) {
   return <Badge variant={TONES[tone].badge}>{TONES[tone].label}</Badge>;
 }
 
-// A share of income against its goal: the bar fills to the share, the tick marks the goal.
+// A share of income against its goal: the bar fills to the share in the bucket's color, the tick
+// marks the goal, and the badge says how it's doing.
 function RuleRow({
   label,
+  color,
   hint,
   amount,
   share,
@@ -48,6 +50,7 @@ function RuleRow({
   tone,
 }: {
   label: string;
+  color: string;
   hint: string;
   amount: number;
   share: number;
@@ -58,13 +61,14 @@ function RuleRow({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
+        <span className={cn("size-2.5 shrink-0 rounded-full", color)} />
         <span className="text-sm font-medium">{label}</span>
         <Status tone={tone} />
         <span className="ml-auto text-sm font-semibold tabular-nums">{store.money(amount)}</span>
       </div>
       <div className="relative h-2 rounded-full bg-muted">
         <div
-          className={cn("h-full rounded-full", TONES[tone].bar)}
+          className={cn("h-full rounded-full", color)}
           style={{ width: `${Math.min(Math.max(share, 0), 100)}%` }}
         />
         <span
@@ -144,6 +148,11 @@ export function Health({ totals }: { totals: MonthlyTotal[] }) {
     ? pastNeeds.reduce((s, n) => s + n, 0) / pastNeeds.length
     : of(thisMonth).needs;
   const fundMonths = monthlyNeeds ? liquid / monthlyNeeds : null;
+  // What usually comes in a month, for the calculator: the last three closed months with any.
+  const pastIncome = [1, 2, 3].map((i) => of(shiftMonth(thisMonth, -i)).income).filter(Boolean);
+  const typicalIncome = pastIncome.length
+    ? pastIncome.reduce((s, n) => s + n, 0) / pastIncome.length
+    : of(thisMonth).income;
 
   // Credit cards: how much of the limit is used, and whether any closed statement went unpaid.
   const cards = accounts.filter((a) => a.type === "credit");
@@ -194,6 +203,7 @@ export function Health({ totals }: { totals: MonthlyTotal[] }) {
               <>
                 <RuleRow
                   label="Necesidades"
+                  color="bg-needs"
                   hint="Vivienda, súper, servicios…"
                   amount={now.needs}
                   share={pct(now.needs, now.income)}
@@ -202,6 +212,7 @@ export function Health({ totals }: { totals: MonthlyTotal[] }) {
                 />
                 <RuleRow
                   label="Deseos"
+                  color="bg-wants"
                   hint="Restaurantes, viajes, suscripciones…"
                   amount={now.wants}
                   share={pct(now.wants, now.income)}
@@ -210,6 +221,7 @@ export function Health({ totals }: { totals: MonthlyTotal[] }) {
                 />
                 <RuleRow
                   label="Ahorro"
+                  color="bg-savings"
                   hint="Lo que te queda de tus ingresos"
                   amount={now.saved}
                   share={pct(now.saved, now.income)}
@@ -266,14 +278,14 @@ export function Health({ totals }: { totals: MonthlyTotal[] }) {
                     <span className="text-xs font-medium text-muted-foreground">
                       {monthName(m, false).slice(0, 3)}
                     </span>
-                    <span className="flex h-2.5 overflow-hidden rounded-full bg-muted">
+                    <span className="flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-muted">
                       {base > 0 &&
                         (
                           [
-                            [t.needs, "bg-chart-1"],
-                            [t.wants, "bg-chart-2"],
+                            [t.needs, "bg-needs"],
+                            [t.wants, "bg-wants"],
                             [t.other, "bg-chart-4"],
-                            [Math.max(t.saved, 0), "bg-chart-3"],
+                            [Math.max(t.saved, 0), "bg-savings"],
                           ] as const
                         ).map(([v, c]) => (
                           <span key={c} className={c} style={{ width: `${pct(v, base)}%` }} />
@@ -299,10 +311,10 @@ export function Health({ totals }: { totals: MonthlyTotal[] }) {
             <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
               {(
                 [
-                  ["bg-chart-1", "Necesidades"],
-                  ["bg-chart-2", "Deseos"],
+                  ["bg-needs", "Necesidades"],
+                  ["bg-wants", "Deseos"],
                   ["bg-chart-4", "Sin clasificar"],
-                  ["bg-chart-3", "Ahorro"],
+                  ["bg-savings", "Ahorro"],
                 ] as const
               ).map(([c, l]) => (
                 <span key={c} className="flex items-center gap-1.5">
@@ -401,6 +413,7 @@ export function Health({ totals }: { totals: MonthlyTotal[] }) {
           </span>
         </Indicator>
       </div>
+      <SavingsCalculator defaultIncome={typicalIncome} liquid={liquid} />
       {editingRule && <RuleDialog income={now.income} onClose={() => setEditingRule(false)} />}
     </>
   );
