@@ -227,7 +227,7 @@ function YearSpending() {
   return (
     <div className="flex flex-col gap-3 p-5">
       <div className="overflow-x-auto pb-2 [direction:rtl]">
-        <div className="w-max [direction:ltr]">
+        <div className="mr-auto w-max [direction:ltr]">
           <SpendingGrid
             from={from}
             to={store.today}
