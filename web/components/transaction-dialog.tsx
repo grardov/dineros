@@ -12,7 +12,7 @@ import { useState } from "react";
 
 import { AccountDialog } from "@/components/account-dialog";
 import { EmptyState } from "@/components/finance";
-import { FormDialog, num, text } from "@/components/form-dialog";
+import { DateInput, FormDialog, num, text } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
@@ -194,6 +194,16 @@ export function TransactionDialog({
               : "Nuevo movimiento"
       }
       submitLabel={kind === "transfer" && !transaction ? "Transferir" : "Guardar"}
+      saved={
+        transaction
+          ? "Movimiento actualizado"
+          : initial?.recurring_id
+            ? "Pago registrado"
+            : kind === "transfer"
+              ? "Transferencia registrada"
+              : "Movimiento registrado"
+      }
+      deleted="Movimiento eliminado"
       onDelete={transaction && (() => deleteTransaction(transaction.id))}
       onSubmit={(d) => {
         const account_id = text(d, "account_id")!;
@@ -272,10 +282,9 @@ export function TransactionDialog({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="occurred_on">Fecha</FieldLabel>
-          <Input
+          <DateInput
             id="occurred_on"
             name="occurred_on"
-            type="date"
             required
             defaultValue={initial?.occurred_on ?? store.today}
           />

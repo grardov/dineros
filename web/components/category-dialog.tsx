@@ -54,6 +54,8 @@ export function CategoryDialog({
       title={
         category ? "Editar categoría" : initialParentId ? "Nueva subcategoría" : "Nueva categoría"
       }
+      saved={category ? "Categoría actualizada" : "Categoría creada"}
+      deleted="Categoría eliminada"
       onDelete={category && (() => deleteCategory(category.id))}
       onSubmit={(d) => {
         const name = text(d, "name")!;
