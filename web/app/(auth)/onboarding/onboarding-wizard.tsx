@@ -122,6 +122,9 @@ export function OnboardingWizard({ categories }: { categories: Category[] }) {
           credit_limit: null,
           statement_day: credit ? Number(statementDay) : null,
           payment_due_day: credit ? Number(dueDay) : null,
+          clabe: null,
+          account_number: null,
+          card_number: null,
           archived_at: null,
         },
         recurring: (withFijos ? chosen : []).map((f) => ({
@@ -148,9 +151,12 @@ export function OnboardingWizard({ categories }: { categories: Category[] }) {
           {STEPS.map((label, i) => (
             <li key={label} className="flex flex-col gap-2">
               <span className={`h-1 rounded-full ${i <= step ? "bg-primary" : "bg-border"}`} />
+              {/* Under 360px the four labels don't fit; "Paso N de 4" below says where you are. */}
               <span
                 className={`text-xs font-medium ${
-                  i === step ? "text-foreground" : i < step ? "text-primary" : "text-subtle"
+                  i === step
+                    ? "text-foreground"
+                    : `max-[359px]:invisible ${i < step ? "text-primary" : "text-subtle"}`
                 }`}
               >
                 {label}
@@ -210,7 +216,11 @@ export function OnboardingWizard({ categories }: { categories: Category[] }) {
               <StepHeader step="Paso 2 de 4" title="Agrega tu primera cuenta">
                 Empieza por la que más usas. Las demás las agregas después.
               </StepHeader>
-              <div role="radiogroup" aria-label="Tipo" className="grid grid-cols-5 gap-2">
+              <div
+                role="radiogroup"
+                aria-label="Tipo"
+                className="grid grid-cols-3 gap-1.5 min-[360px]:grid-cols-5 sm:gap-2"
+              >
                 {Object.entries(ACCOUNT_TYPES).map(([key, label]) => {
                   const Icon = ACCOUNT_ICONS[key as AccountType];
                   const on = key === type;
@@ -221,7 +231,7 @@ export function OnboardingWizard({ categories }: { categories: Category[] }) {
                       role="radio"
                       aria-checked={on}
                       onClick={() => setType(key as AccountType)}
-                      className={`flex flex-col items-center gap-2 rounded-[10px] border px-1 pt-3 pb-2.5 text-xs font-medium sm:text-[0.8125rem] ${
+                      className={`flex flex-col items-center gap-2 rounded-[10px] border px-0.5 pt-3 pb-2.5 text-xs font-medium min-[360px]:text-[11px] sm:px-1 sm:text-[0.8125rem] ${
                         on ? "border-primary bg-[#f3f8f6] ring-3 ring-accent" : "bg-card"
                       }`}
                     >
@@ -238,7 +248,7 @@ export function OnboardingWizard({ categories }: { categories: Category[] }) {
                 })}
               </div>
               <FieldGroup className="gap-4">
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field>
                     <FieldLabel htmlFor="account_name">Nombre</FieldLabel>
                     <Input
@@ -283,7 +293,7 @@ export function OnboardingWizard({ categories }: { categories: Category[] }) {
                   </FieldDescription>
                 </Field>
                 {credit && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 items-end gap-4">
                     <Field>
                       <FieldLabel htmlFor="statement_day">Día de corte</FieldLabel>
                       <Input
@@ -364,7 +374,8 @@ export function OnboardingWizard({ categories }: { categories: Category[] }) {
                   return (
                     <div
                       key={f.name}
-                      className={`grid grid-cols-[18px_1fr_104px_44px] items-center gap-3 px-3.5 py-2.5 sm:grid-cols-[18px_32px_1fr_128px_72px] ${
+                      // On phones the name takes its own line, with amount and day below it.
+                      className={`grid grid-cols-[18px_minmax(0,1fr)_72px] items-center gap-x-3 gap-y-2 px-3.5 py-2.5 sm:grid-cols-[18px_32px_minmax(0,1fr)_128px_72px] sm:gap-y-3 ${
                         i ? "border-t" : ""
                       } ${state.on ? "bg-card" : "bg-sidebar"}`}
                     >
@@ -378,14 +389,14 @@ export function OnboardingWizard({ categories }: { categories: Category[] }) {
                       <span className="grid size-8 place-items-center rounded-[9px] bg-secondary text-base max-sm:hidden">
                         {f.icon}
                       </span>
-                      <div className="flex min-w-0 flex-col">
+                      <div className="flex min-w-0 flex-col max-sm:col-span-2">
                         <span className="text-sm font-medium">{f.name}</span>
                         <span className="truncate text-xs text-muted-foreground">
                           {f.kind === "income" ? "Ingreso" : "Gasto"} · {FREQUENCIES[f.every]}
                           {f.variable && " · variable"}
                         </span>
                       </div>
-                      <div className={state.on ? "" : "opacity-40"}>
+                      <div className={`max-sm:col-start-2 ${state.on ? "" : "opacity-40"}`}>
                         <MoneyInput
                           aria-label={`Monto de ${f.name}`}
                           defaultValue={state.amount}
@@ -397,7 +408,7 @@ export function OnboardingWizard({ categories }: { categories: Category[] }) {
                           state.on ? "" : "opacity-40"
                         }`}
                       >
-                        <span className="max-sm:sr-only">Día</span>
+                        <span>Día</span>
                         <Input
                           type="number"
                           min={1}
@@ -491,9 +502,14 @@ export function OnboardingWizard({ categories }: { categories: Category[] }) {
         </div>
 
         {step < 4 && (
-          <div className="flex items-center gap-2 border-t bg-sidebar px-6 py-3.5 sm:px-8">
+          <div className="flex flex-wrap items-center gap-2 border-t bg-sidebar px-6 py-3.5 sm:px-8">
             {step > 0 && (
-              <Button type="button" variant="ghost" onClick={() => setStep(step - 1)}>
+              <Button
+                type="button"
+                variant="ghost"
+                className="max-sm:px-2"
+                onClick={() => setStep(step - 1)}
+              >
                 <ArrowLeftIcon /> Atrás
               </Button>
             )}
@@ -508,7 +524,12 @@ export function OnboardingWizard({ categories }: { categories: Category[] }) {
                 Omitir por ahora
               </Button>
             )}
-            <Button type="submit" disabled={!valid || pending}>
+            {/* Three buttons don't fit a phone: the main one goes on its own row, on top. */}
+            <Button
+              type="submit"
+              disabled={!valid || pending}
+              className={step === 3 ? "max-sm:order-first max-sm:w-full" : ""}
+            >
               {pending && <LoaderCircleIcon className="animate-spin" />}
               {step < 3
                 ? "Continuar"

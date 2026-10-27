@@ -12,7 +12,7 @@ import { useState } from "react";
 
 import { AccountDialog } from "@/components/account-dialog";
 import { EmptyState } from "@/components/finance";
-import { FormDialog, num, text } from "@/components/form-dialog";
+import { DateInput, FormDialog, num, text } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
@@ -45,16 +45,17 @@ export function KindTabs({
 }) {
   return (
     <Tabs value={kind} onValueChange={(v) => onChange(v as TransactionKind)}>
-      <TabsList className="grid w-full grid-cols-3">
+      {/* Tabs sized by their label, icons dropped on phones: "Transferencia" doesn't fit a third. */}
+      <TabsList className="w-full">
         {Object.entries(TRANSACTION_KINDS).map(([value, label]) => {
           const Icon = KIND_ICONS[value as TransactionKind];
           return (
             <TabsTrigger
               key={value}
               value={value}
-              className={`text-[0.8125rem] data-active:font-semibold ${KIND_COLORS[value as TransactionKind]}`}
+              className={`flex-auto text-[0.8125rem] data-active:font-semibold ${KIND_COLORS[value as TransactionKind]}`}
             >
-              <Icon /> {label}
+              <Icon className="max-sm:hidden" /> {label}
             </TabsTrigger>
           );
         })}
@@ -193,6 +194,16 @@ export function TransactionDialog({
               : "Nuevo movimiento"
       }
       submitLabel={kind === "transfer" && !transaction ? "Transferir" : "Guardar"}
+      saved={
+        transaction
+          ? "Movimiento actualizado"
+          : initial?.recurring_id
+            ? "Pago registrado"
+            : kind === "transfer"
+              ? "Transferencia registrada"
+              : "Movimiento registrado"
+      }
+      deleted="Movimiento eliminado"
       onDelete={transaction && (() => deleteTransaction(transaction.id))}
       onSubmit={(d) => {
         const account_id = text(d, "account_id")!;
@@ -229,7 +240,7 @@ export function TransactionDialog({
 
       <label className="flex flex-col items-center gap-1 py-1">
         <span className="sr-only">Monto</span>
-        <span className="flex items-baseline justify-center gap-1 tabular-nums">
+        <span className="flex max-w-full items-baseline justify-center gap-1 tabular-nums">
           <span className="text-[26px] font-medium text-subtle">$</span>
           <input
             name="amount"
@@ -240,7 +251,7 @@ export function TransactionDialog({
             autoFocus
             placeholder="0.00"
             defaultValue={initial?.amount}
-            className={`field-sizing-content min-w-[4ch] [appearance:textfield] bg-transparent text-[46px] leading-none font-semibold tracking-tight outline-none placeholder:text-input [&::-webkit-inner-spin-button]:appearance-none ${
+            className={`field-sizing-content max-w-full min-w-[4ch] [appearance:textfield] bg-transparent text-[46px] leading-none font-semibold tracking-tight outline-none placeholder:text-input [&::-webkit-inner-spin-button]:appearance-none ${
               kind === "transfer" ? "text-transfer" : ""
             }`}
           />
@@ -248,7 +259,7 @@ export function TransactionDialog({
         <span className="text-xs text-subtle">{currency}</span>
       </label>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="account_id">{kind === "transfer" ? "Desde" : "Cuenta"}</FieldLabel>
           {accountSelect("account_id", initial?.account_id ?? accountId)}
@@ -268,13 +279,12 @@ export function TransactionDialog({
           </Field>
         )}
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="occurred_on">Fecha</FieldLabel>
-          <Input
+          <DateInput
             id="occurred_on"
             name="occurred_on"
-            type="date"
             required
             defaultValue={initial?.occurred_on ?? store.today}
           />

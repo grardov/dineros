@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { FormDialog, MoneyInput, num, text } from "@/components/form-dialog";
+import { DateInput, FormDialog, MoneyInput, num, text } from "@/components/form-dialog";
 import { CategorySelect, KindTabs } from "@/components/transaction-dialog";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -72,6 +72,8 @@ export function RecurringDialog({
       open={open}
       onClose={onClose}
       title={recurring ? "Editar fijo" : "Nuevo fijo"}
+      saved={recurring ? "Fijo actualizado" : "Fijo creado"}
+      deleted="Fijo eliminado"
       onDelete={recurring && (() => deleteRecurring(recurring.id))}
       onSubmit={(d) => {
         const account_id = text(d, "account_id")!;
@@ -111,7 +113,7 @@ export function RecurringDialog({
         />
       </Field>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="account_id">
             {kind === "income" ? "Llega a" : kind === "transfer" ? "Desde" : "Se paga desde"}
@@ -211,24 +213,25 @@ export function RecurringDialog({
         </>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="starts_on">Primer mes</FieldLabel>
-          <Input
+          <DateInput
             id="starts_on"
             name="starts_on"
-            type="month"
+            month
             required
             defaultValue={(recurring?.starts_on ?? store.today).slice(0, 7)}
           />
         </Field>
         <Field>
           <FieldLabel htmlFor="ends_on">Último mes</FieldLabel>
-          <Input
+          <DateInput
             id="ends_on"
             name="ends_on"
-            type="month"
-            defaultValue={recurring?.ends_on?.slice(0, 7) ?? ""}
+            month
+            placeholder="Sin último mes"
+            defaultValue={recurring?.ends_on?.slice(0, 7)}
           />
         </Field>
       </div>

@@ -13,7 +13,7 @@ import { useStore } from "@/lib/store";
 import { CATEGORY_KINDS, type Category, type CategoryKind, money } from "@/lib/types";
 
 const cols =
-  "grid grid-cols-[minmax(0,1fr)_5rem_2.75rem] items-center gap-3.5 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_2.75rem]";
+  "grid grid-cols-[minmax(0,1fr)_5rem_2.75rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_2.75rem] sm:gap-3.5";
 
 export default function CategoriesPage() {
   const store = useStore();

@@ -226,7 +226,7 @@ export function MoreLink({ href, children }: { href: string; children: React.Rea
   return (
     <Link
       href={href}
-      className="inline-flex shrink-0 items-center gap-0.5 text-[0.8125rem] font-medium whitespace-nowrap text-primary hover:text-accent-foreground"
+      className="-my-1.5 inline-flex shrink-0 items-center gap-0.5 py-1.5 text-[0.8125rem] font-medium whitespace-nowrap text-primary hover:text-accent-foreground"
     >
       {children}
       <ChevronRightIcon className="size-3.5" />
