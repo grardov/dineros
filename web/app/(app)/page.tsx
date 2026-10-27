@@ -34,7 +34,7 @@ import { NewTransactionButton, TransactionRows } from "@/components/transaction-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
-import { ACCOUNT_TYPES, type Account, money, signedMoney } from "@/lib/types";
+import { ACCOUNT_TYPES, type Account } from "@/lib/types";
 
 // "+3.2% vs septiembre"; for spending, going down is the good direction.
 function Delta({
@@ -70,13 +70,14 @@ function CategoryRow({
   total: number;
   max: number;
 }) {
+  const store = useStore();
   const { category, tone, icon } = useCategory(id);
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-2 text-[0.8125rem]">
         <span aria-hidden>{icon ?? "·"}</span>
         <span className="truncate font-medium">{category?.name ?? "Sin categoría"}</span>
-        <span className="ml-auto font-semibold tabular-nums">{money(amount)}</span>
+        <span className="ml-auto font-semibold tabular-nums">{store.money(amount)}</span>
         <span className="w-9 text-right text-xs text-subtle tabular-nums">
           {Math.round((amount / total) * 100)}%
         </span>
@@ -113,7 +114,7 @@ function AccountRow({ account }: { account: Account }) {
           </span>
         </div>
         <span className="text-sm font-semibold tabular-nums">
-          {signedMoney(store.balance(account.id), account.currency, false)}
+          {store.signedMoney(store.balance(account.id), account.currency, false)}
         </span>
       </div>
       {isCredit && account.credit_limit && (
@@ -228,7 +229,7 @@ export default function Home() {
                 deltaClassName="max-md:text-primary-foreground"
               />
               <span className="text-xs text-muted-foreground max-md:text-primary-foreground/80">
-                Activos {money(assets)} · Deudas {signedMoney(debts, "MXN", false)}
+                Activos {store.money(assets)} · Deudas {store.signedMoney(debts, "MXN", false)}
               </span>
             </Stat>
           </CardContent>
