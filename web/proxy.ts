@@ -36,6 +36,6 @@ export async function proxy(request: NextRequest) {
 export const config = {
   // Static and metadata files must reach crawlers and the install prompt without a session.
   matcher: [
-    "/((?!_next/static|_next/image|icon.svg|apple-icon.png|manifest.webmanifest|robots.txt|institutions/).*)",
+    "/((?!_next/static|_next/image|icon.svg|apple-icon.png|opengraph-image.png|manifest.webmanifest|robots.txt|institutions/).*)",
   ],
 };

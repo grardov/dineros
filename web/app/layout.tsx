@@ -18,10 +18,16 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+const description = "Lleva tus cuentas, tarjetas, gastos fijos y movimientos en un solo lugar.";
+
 export const metadata: Metadata = {
   title: { template: "%s · Dineros", default: "Dineros" },
-  description: "Lleva tus cuentas, tarjetas, gastos fijos y movimientos en un solo lugar.",
+  description,
   applicationName: "Dineros",
+  // Link previews; the image is app/opengraph-image.png, and on Vercel Next resolves its
+  // absolute URL from the deployment, so there's no metadataBase to keep in sync.
+  openGraph: { title: "Dineros", description, siteName: "Dineros", locale: "es_MX" },
+  twitter: { card: "summary_large_image" },
   // Everything sits behind a login with private data; only /login opts back in.
   robots: { index: false, follow: false },
   appleWebApp: { title: "Dineros" },
