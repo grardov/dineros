@@ -8,7 +8,7 @@ import { capitalize, dayMonth } from "@/components/finance";
 import { TransactionDialog } from "@/components/transaction-dialog";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
-import { signedMoney, type Transaction, type TransactionKind } from "@/lib/types";
+import { type Transaction, type TransactionKind } from "@/lib/types";
 import { cn } from "cn";
 
 // Signed from the point of view of `accountId` when given: a transfer is money out of one account
@@ -116,8 +116,8 @@ function Row({
         )}
       >
         {amount === null
-          ? signedMoney(t.amount, account.currency, false)
-          : signedMoney(amount, account.currency)}
+          ? store.signedMoney(t.amount, account.currency, false)
+          : store.signedMoney(amount, account.currency)}
       </span>
     </button>
   );
@@ -178,7 +178,7 @@ export function TransactionRows({
           <h3 className="flex justify-between border-b border-muted bg-sidebar px-4 pt-2.5 pb-1.5 font-sans text-xs font-semibold text-sidebar-foreground md:px-[18px]">
             <span>{dayLabel(day, store.today)}</span>
             <span className="text-muted-foreground tabular-nums">
-              {signedMoney(rows.reduce((s, t) => s + (signed(t, accountId) ?? 0), 0))}
+              {store.signedMoney(rows.reduce((s, t) => s + (signed(t, accountId) ?? 0), 0))}
             </span>
           </h3>
           {rows.map((t) => (

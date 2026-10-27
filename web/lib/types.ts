@@ -173,6 +173,9 @@ export function money(amount: number, currency = "MXN") {
 
 export const MINUS = "\u2212";
 
+// Cookie that keeps amounts hidden across visits, so the server renders them hidden too.
+export const HIDE_AMOUNTS = "hide_amounts";
+
 // Typographic minus for negatives; "+" only where asked (income in lists).
 export function signedMoney(amount: number, currency = "MXN", plus = true) {
   const sign = amount < 0 ? MINUS : plus && amount > 0 ? "+" : "";

@@ -1,0 +1,27 @@
+name: PR
+
+# The PR title becomes the squash commit on staging: scripts/release.sh reads it to pick the version,
+# and its type becomes the label that groups the release notes (.github/release.yml).
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+
+jobs:
+  title:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - run: |
+          types="feat fix perf refactor docs chore"
+          type=$(grep -oP "^(${types// /|})(?=(\(.+\))?!?: )" <<<"$TITLE") || {
+            echo "::error::PR title must be '<type>[(scope)][!]: <summary>' with type one of: $types"
+            exit 1
+          }
+          others=$(tr ' ' '\n' <<<"$types" | grep -vx "$type" | paste -sd,)
+          gh pr edit "$PR" --repo "$REPO" --add-label "$type" --remove-label "$others"
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
