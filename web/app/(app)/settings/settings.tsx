@@ -23,6 +23,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { toast } from "@/components/ui/toast";
 import { deleteUser, saveProfile } from "@/lib/actions";
 import { useStore } from "@/lib/store";
 import { CFDI_USES, type Profile, TAX_REGIMES } from "@/lib/types";
@@ -74,8 +75,6 @@ function Row({
 export function Settings() {
   const { email, profile } = useStore();
   const [name, setName] = useState(profile.display_name ?? "");
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [reset, requestReset, resetting] = useActionState(requestPasswordReset, null);
   const dirty = name.trim() !== "" && name.trim() !== profile.display_name;
@@ -87,8 +86,9 @@ export function Settings() {
   const save = (patch: Parameters<typeof saveProfile>[0]) =>
     startTransition(async () => {
       const err = await saveProfile(patch);
-      setError(err);
-      setSaved(!err);
+      toast.add(
+        err ? { title: err, type: "error" } : { title: "Cambios guardados", type: "success" },
+      );
     });
 
   return (
@@ -123,10 +123,7 @@ export function Settings() {
                   id="display_name"
                   maxLength={100}
                   value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    setSaved(false);
-                  }}
+                  onChange={(e) => setName(e.target.value)}
                 />
               </Field>
               <Field>
@@ -135,16 +132,6 @@ export function Settings() {
               </Field>
             </div>
             <div className="flex items-center justify-end gap-3 border-t bg-sidebar px-5 py-3.5">
-              {error && (
-                <span role="alert" className="text-[0.8125rem] text-destructive">
-                  {error}
-                </span>
-              )}
-              {saved && (
-                <span role="status" className="text-[0.8125rem] text-income">
-                  Cambios guardados
-                </span>
-              )}
               <Button type="submit" disabled={!dirty || pending}>
                 {pending && <LoaderCircleIcon className="animate-spin" />}
                 Guardar
@@ -230,8 +217,6 @@ const label = (catalog: Record<string, string>, code: string | null) =>
   code && `${code} · ${catalog[code] ?? ""}`;
 
 function FiscalData({ profile, email }: { profile: Profile; email: string }) {
-  const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
   const text = shareText("Datos fiscales", [
     ["RFC", profile.rfc],
@@ -244,7 +229,6 @@ function FiscalData({ profile, email }: { profile: Profile; email: string }) {
 
   return (
     <form
-      onChange={() => setSaved(false)}
       onSubmit={(e) => {
         e.preventDefault();
         const d = new FormData(e.currentTarget);
@@ -252,8 +236,12 @@ function FiscalData({ profile, email }: { profile: Profile; email: string }) {
         const rfc = value("rfc")?.toUpperCase() ?? null;
         const zip = value("tax_zip");
         if (rfc && !/^[A-ZÑ&]{3,4}\d{6}[A-Z\d]{3}$/.test(rfc))
-          return setError("El RFC no es válido: son 12 o 13 caracteres, con homoclave.");
-        if (zip && !/^\d{5}$/.test(zip)) return setError("El código postal son 5 dígitos.");
+          return void toast.add({
+            title: "El RFC no es válido: son 12 o 13 caracteres, con homoclave.",
+            type: "error",
+          });
+        if (zip && !/^\d{5}$/.test(zip))
+          return void toast.add({ title: "El código postal son 5 dígitos.", type: "error" });
         startTransition(async () => {
           const err = await saveProfile({
             rfc,
@@ -262,8 +250,9 @@ function FiscalData({ profile, email }: { profile: Profile; email: string }) {
             tax_regime: value("tax_regime"),
             cfdi_use: value("cfdi_use"),
           });
-          setError(err);
-          setSaved(!err);
+          toast.add(
+            err ? { title: err, type: "error" } : { title: "Cambios guardados", type: "success" },
+          );
         });
       }}
     >
@@ -342,16 +331,6 @@ function FiscalData({ profile, email }: { profile: Profile; email: string }) {
           <div className="mr-auto flex gap-2">
             <ShareButtons text={text} />
           </div>
-        )}
-        {error && (
-          <span role="alert" className="text-[0.8125rem] text-destructive">
-            {error}
-          </span>
-        )}
-        {saved && (
-          <span role="status" className="text-[0.8125rem] text-income">
-            Cambios guardados
-          </span>
         )}
         <Button type="submit" disabled={pending}>
           {pending && <LoaderCircleIcon className="animate-spin" />}

@@ -38,6 +38,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "@/components/ui/toast";
 import { saveAccount } from "@/lib/actions";
 import { useStore } from "@/lib/store";
 import { ACCOUNT_TYPES, type Account, type CreditCardStatement, shortDate } from "@/lib/types";
@@ -289,9 +290,17 @@ export default function AccountPage() {
           disabled={archiving}
           onClick={() => {
             const archived_at = account.archived_at ? null : new Date().toISOString();
-            startArchiving(
-              async () => void (await saveAccount(account.id, { ...account, archived_at })),
-            );
+            startArchiving(async () => {
+              const err = await saveAccount(account.id, { ...account, archived_at });
+              toast.add(
+                err
+                  ? { title: err, type: "error" }
+                  : {
+                      title: archived_at ? "Cuenta archivada" : "Cuenta desarchivada",
+                      type: "success",
+                    },
+              );
+            });
           }}
         >
           {account.archived_at ? <ArchiveRestoreIcon /> : <ArchiveIcon />}

@@ -64,6 +64,8 @@ export function AccountDialog({
       open={open}
       onClose={onClose}
       title={account ? "Editar cuenta" : "Nueva cuenta"}
+      saved={account ? "Cuenta actualizada" : "Cuenta creada"}
+      deleted="Cuenta eliminada"
       onDelete={account && (() => deleteAccount(account.id))}
       onSubmit={(d) => {
         const opening = num(d, "opening_balance") ?? 0;
