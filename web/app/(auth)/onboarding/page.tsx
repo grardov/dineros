@@ -13,7 +13,7 @@ import type { Category } from "@/lib/types";
 
 import { OnboardingWizard } from "./onboarding-wizard";
 
-export const metadata: Metadata = { title: "Bienvenida · Dineros" };
+export const metadata: Metadata = { title: "Bienvenida" };
 
 // First visit after signing up; the (app) layout sends anyone not onboarded here.
 export default function OnboardingPage() {
