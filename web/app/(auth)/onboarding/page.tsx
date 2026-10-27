@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import { signOut } from "@/app/(auth)/actions";
 import { Logo } from "@/components/logo";
+import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/api";
 import { getProfile } from "@/lib/data";
 import { createClient } from "@/lib/supabase";
@@ -12,12 +13,12 @@ import type { Category } from "@/lib/types";
 
 import { OnboardingWizard } from "./onboarding-wizard";
 
-export const metadata: Metadata = { title: "Bienvenida · Dineros" };
+export const metadata: Metadata = { title: "Bienvenida" };
 
 // First visit after signing up; the (app) layout sends anyone not onboarded here.
 export default function OnboardingPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<Spinner>Preparando tu cuenta…</Spinner>}>
       <Onboarding />
     </Suspense>
   );
@@ -26,7 +27,7 @@ export default function OnboardingPage() {
 async function Onboarding() {
   await connection();
   const profile = await getProfile();
-  if (profile.onboarded_at) redirect("/");
+  if (profile.onboarded_at) redirect("/dashboard");
   const supabase = await createClient();
   const [{ data }, categories] = await Promise.all([
     supabase.auth.getClaims(),
@@ -41,7 +42,7 @@ async function Onboarding() {
           <span className="truncate text-muted-foreground max-sm:hidden">
             {data?.claims.email} ·
           </span>
-          <button type="submit" className="font-medium text-primary hover:underline">
+          <button type="submit" className="-m-2 p-2 font-medium text-primary hover:underline">
             Salir
           </button>
         </form>

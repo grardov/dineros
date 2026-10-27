@@ -6,13 +6,18 @@
 import { createContext, useContext, useMemo, useState } from "react";
 
 import type { StoreData } from "@/lib/data";
+import { HIDE_AMOUNTS, money, signedMoney } from "@/lib/types";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
+const MASK = "$••••";
+
 function useStoreValue(data: StoreData) {
   const [today] = useState(() => iso(new Date()));
   const [loadedAt] = useState(() => Date.now());
+  // Hide amounts for when someone could see the screen; remembered in a cookie for a year.
+  const [hidden, setHidden] = useState(data.hideAmounts);
 
   return useMemo(
     () => ({
@@ -24,6 +29,14 @@ function useStoreValue(data: StoreData) {
       recurring: data.recurring,
       occurrences: data.occurrences, // this month and next, by due date
       today,
+      hidden,
+      toggleHidden: () => {
+        document.cookie = `${HIDE_AMOUNTS}=${hidden ? 0 : 1}; path=/; max-age=31536000; samesite=lax`;
+        setHidden(!hidden);
+      },
+      money: (amount: number, currency?: string) => (hidden ? MASK : money(amount, currency)),
+      signedMoney: (amount: number, currency?: string, plus?: boolean) =>
+        hidden ? MASK : signedMoney(amount, currency, plus),
       loadedAt, // ms; what's created after this is new in this visit
       balance: (id: string) => data.balances[id]?.balance ?? 0,
       statements: (a: { id: string }) => data.statements[a.id] ?? [], // newest corte first
@@ -31,7 +44,7 @@ function useStoreValue(data: StoreData) {
       category: (id: string | null) => data.categories.find((c) => c.id === id),
       fijo: (id: string | null) => data.recurring.find((r) => r.id === id),
     }),
-    [data, today, loadedAt],
+    [data, today, loadedAt, hidden],
   );
 }
 

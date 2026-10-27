@@ -16,8 +16,9 @@ def get_profile(session: SessionDep, user_id: CurrentUserId) -> Profile:
 
 @router.put("/")
 def update_profile(session: SessionDep, user_id: CurrentUserId, body: ProfileUpdate) -> Profile:
+    """Only the fields sent change, so saving the name leaves the datos fiscales alone."""
     profile = get_or_404(session, Profile, user_id)
-    profile.sqlmodel_update(body.model_dump())
+    profile.sqlmodel_update(body.model_dump(exclude_unset=True))
     session.commit()
     session.refresh(profile)
     return profile

@@ -34,7 +34,7 @@ import { NewTransactionButton, TransactionRows } from "@/components/transaction-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
-import { ACCOUNT_TYPES, type Account, money, signedMoney } from "@/lib/types";
+import { ACCOUNT_TYPES, type Account } from "@/lib/types";
 
 // "+3.2% vs septiembre"; for spending, going down is the good direction.
 function Delta({
@@ -70,13 +70,14 @@ function CategoryRow({
   total: number;
   max: number;
 }) {
+  const store = useStore();
   const { category, tone, icon } = useCategory(id);
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-2 text-[0.8125rem]">
         <span aria-hidden>{icon ?? "·"}</span>
         <span className="truncate font-medium">{category?.name ?? "Sin categoría"}</span>
-        <span className="ml-auto font-semibold tabular-nums">{money(amount)}</span>
+        <span className="ml-auto font-semibold tabular-nums">{store.money(amount)}</span>
         <span className="w-9 text-right text-xs text-subtle tabular-nums">
           {Math.round((amount / total) * 100)}%
         </span>
@@ -113,7 +114,7 @@ function AccountRow({ account }: { account: Account }) {
           </span>
         </div>
         <span className="text-sm font-semibold tabular-nums">
-          {signedMoney(store.balance(account.id), account.currency, false)}
+          {store.signedMoney(store.balance(account.id), account.currency, false)}
         </span>
       </div>
       {isCredit && account.credit_limit && (
@@ -223,22 +224,23 @@ export default function Home() {
             >
               <CountUpAmount
                 value={assets + debts}
-                className="text-[34px] leading-none md:text-[26px]"
+                className="text-[28px] leading-none min-[375px]:text-[34px] md:text-[26px]"
                 centsClassName="text-subtle max-md:text-primary-foreground/60"
                 deltaClassName="max-md:text-primary-foreground"
               />
               <span className="text-xs text-muted-foreground max-md:text-primary-foreground/80">
-                Activos {money(assets)} · Deudas {signedMoney(debts, "MXN", false)}
+                Activos {store.money(assets)} · Deudas {store.signedMoney(debts, "MXN", false)}
               </span>
             </Stat>
           </CardContent>
         </Card>
-        <Card>
+        {/* Under 360px half a row can't hold a five-digit amount. */}
+        <Card className="max-[359px]:col-span-2">
           <CardContent>
             <Stat label="Ingresos del mes">
               <Amount
                 value={now.income}
-                className="text-xl leading-none text-income md:text-[26px]"
+                className="text-lg leading-none text-income sm:text-xl md:text-[26px]"
                 centsClassName="opacity-55"
               />
               <Delta
@@ -249,12 +251,12 @@ export default function Home() {
             </Stat>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="max-[359px]:col-span-2">
           <CardContent>
             <Stat label="Gastos del mes">
               <Amount
                 value={now.expense}
-                className="text-xl leading-none text-expense md:text-[26px]"
+                className="text-lg leading-none text-expense sm:text-xl md:text-[26px]"
                 centsClassName="opacity-55"
               />
               <Delta
@@ -293,7 +295,7 @@ export default function Home() {
         </Card>
       </div>
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
         <Card className="gap-1 pb-1">
           <CardHeader className="flex items-center justify-between">
             <CardTitle>Movimientos recientes</CardTitle>

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
-import { signedMoney, type TransactionKind } from "@/lib/types";
+import { type TransactionKind } from "@/lib/types";
 
 const KINDS = { all: "Todos", expense: "Gastos", income: "Ingresos", transfer: "Transferencias" };
 
@@ -99,7 +99,11 @@ export default function TransactionsPage() {
         >
           <TabsList className="max-sm:w-full">
             {Object.entries(KINDS).map(([value, label]) => (
-              <TabsTrigger key={value} value={value} className="px-3 text-[0.8125rem]">
+              <TabsTrigger
+                key={value}
+                value={value}
+                className="px-3 text-[0.8125rem] max-[359px]:px-2 max-[359px]:text-xs"
+              >
                 {label}
               </TabsTrigger>
             ))}
@@ -123,16 +127,18 @@ export default function TransactionsPage() {
       <div className="flex flex-wrap items-baseline gap-x-7 gap-y-1 px-0.5 text-[0.8125rem] text-muted-foreground">
         <span>
           Ingresos{" "}
-          <b className="text-[0.9375rem] text-income tabular-nums">{signedMoney(income)}</b>
+          <b className="text-[0.9375rem] text-income tabular-nums">{store.signedMoney(income)}</b>
         </span>
         <span>
           Gastos{" "}
-          <b className="text-[0.9375rem] text-expense tabular-nums">{signedMoney(-expense)}</b>
+          <b className="text-[0.9375rem] text-expense tabular-nums">
+            {store.signedMoney(-expense)}
+          </b>
         </span>
         <span>
           Neto{" "}
           <b className="text-[0.9375rem] text-foreground tabular-nums">
-            {signedMoney(income - expense)}
+            {store.signedMoney(income - expense)}
           </b>
         </span>
         <span className="text-xs sm:ml-auto">Las transferencias no suman al neto</span>

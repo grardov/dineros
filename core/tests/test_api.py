@@ -357,3 +357,26 @@ def test_onboarding_and_delete_user(client, new_user) -> None:
     # The JWT outlives the user, but there's nothing left behind it.
     assert client.get("/accounts/", headers=h).json() == []
     assert client.get("/profile/", headers=h).status_code == 404
+
+
+def test_transfer_and_fiscal_data(client, new_user) -> None:
+    h = new_user()
+    card = {"name": "Oro", "type": "credit", "statement_day": 5, "payment_due_day": 25}
+    data = {"clabe": "012180001234567891", "account_number": "0123456789"}
+    account = client.post("/accounts/", headers=h, json=card | data).json()
+    assert account["clabe"] == data["clabe"]
+    assert client.post("/accounts/", headers=h, json=card | {"clabe": "123"}).status_code == 422
+    # Cash has nowhere to send money to.
+    cash = {"name": "Cartera", "type": "cash"} | data
+    assert client.post("/accounts/", headers=h, json=cash).status_code == 409
+
+    fiscal = {"rfc": "VAGA900101AB1", "legal_name": "Gerardo Valencia", "tax_zip": "06600"}
+    client.put("/profile/", headers=h, json=fiscal | {"tax_regime": "605", "cfdi_use": "G03"})
+    # Saving the name alone keeps the datos fiscales.
+    profile = client.put("/profile/", headers=h, json={"display_name": "Gera"}).json()
+    assert (profile["display_name"], profile["rfc"], profile["cfdi_use"]) == (
+        "Gera",
+        "VAGA900101AB1",
+        "G03",
+    )
+    assert client.put("/profile/", headers=h, json={"rfc": "nope"}).status_code == 422

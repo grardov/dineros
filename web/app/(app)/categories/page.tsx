@@ -10,10 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
-import { CATEGORY_KINDS, type Category, type CategoryKind, money } from "@/lib/types";
+import { CATEGORY_KINDS, type Category, type CategoryKind } from "@/lib/types";
 
 const cols =
-  "grid grid-cols-[minmax(0,1fr)_5rem_2.75rem] items-center gap-3.5 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_2.75rem]";
+  "grid grid-cols-[minmax(0,1fr)_5rem_2.75rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_2.75rem] sm:gap-3.5";
 
 export default function CategoriesPage() {
   const store = useStore();
@@ -71,7 +71,7 @@ export default function CategoriesPage() {
           {count}
         </span>
         <span className={`text-right text-sm tabular-nums ${sub ? "" : "font-semibold"}`}>
-          {amount ? money(amount) : "—"}
+          {amount ? store.money(amount) : "—"}
         </span>
         <span className="flex items-center justify-end gap-1">
           {!sub && (

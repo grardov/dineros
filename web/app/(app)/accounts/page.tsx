@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
-import { ACCOUNT_TYPES, type Account, type AccountType, money, signedMoney } from "@/lib/types";
+import { ACCOUNT_TYPES, type Account, type AccountType } from "@/lib/types";
 
 const GROUPS: [string, AccountType[]][] = [
   ["Débito y efectivo", ["debit", "cash"]],
@@ -59,7 +59,7 @@ function AccountCard({ account }: { account: Account }) {
           {credit.available !== null && (
             <Stat label="Disponible" className="text-right">
               <span className="text-sm font-semibold tabular-nums">
-                {money(credit.available, account.currency)}
+                {store.money(credit.available, account.currency)}
               </span>
             </Stat>
           )}
@@ -132,7 +132,7 @@ export default function AccountsPage() {
                 key="d"
                 className="text-2xl leading-none font-semibold text-expense tabular-nums"
               >
-                {signedMoney(debts, "MXN", false)}
+                {store.signedMoney(debts, "MXN", false)}
               </span>,
             ],
             [
@@ -165,10 +165,10 @@ export default function AccountsPage() {
                 </span>
               </h2>
               <span className="text-[0.8125rem] font-semibold text-sidebar-foreground tabular-nums">
-                {signedMoney(total, "MXN", false)}
+                {store.signedMoney(total, "MXN", false)}
               </span>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {group.map((a) => (
                 <AccountCard key={a.id} account={a} />
               ))}
@@ -193,7 +193,7 @@ export default function AccountsPage() {
             />
           </button>
           {showArchived && (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {archived.map((a) => (
                 <AccountCard key={a.id} account={a} />
               ))}

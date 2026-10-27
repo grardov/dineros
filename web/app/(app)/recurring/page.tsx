@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
-import { FREQUENCIES, type Recurring, money, signedMoney } from "@/lib/types";
+import { FREQUENCIES, type Recurring } from "@/lib/types";
 
 export default function RecurringPage() {
   const store = useStore();
@@ -70,8 +70,9 @@ export default function RecurringPage() {
               </h2>
               {now.out > 0 && (
                 <span className="text-[0.8125rem] text-muted-foreground tabular-nums">
-                  Pagado <b className="text-foreground">{money(paidOut)}</b> de {money(now.out)}
-                  {now.leftOut > 0 && ` · faltan ${money(now.leftOut)}`}
+                  Pagado <b className="text-foreground">{store.money(paidOut)}</b> de{" "}
+                  {store.money(now.out)}
+                  {now.leftOut > 0 && ` · faltan ${store.money(now.leftOut)}`}
                 </span>
               )}
             </div>
@@ -90,7 +91,8 @@ export default function RecurringPage() {
             <h2 className="text-base leading-tight font-semibold tracking-tight">
               {monthName(next.month)} · proyección
             </h2>
-            <Card className="grid grid-cols-3 gap-0 p-0">
+            {/* Phones: what's left gets a row of its own; three amounts don't fit side by side. */}
+            <Card className="grid grid-cols-2 gap-0 p-0 sm:grid-cols-3">
               {[
                 ["Entradas", next.income, "text-income"],
                 ["Salidas", -next.out, "text-expense"],
@@ -101,12 +103,12 @@ export default function RecurringPage() {
                 <Stat
                   key={label as string}
                   label={label}
-                  className="border-r border-muted px-3 py-3.5 last:border-r-0 sm:px-4 sm:py-4 md:px-5.5"
+                  className="border-r border-muted px-3 py-3.5 last:border-r-0 max-sm:nth-2:border-r-0 max-sm:last:col-span-2 max-sm:last:border-t sm:px-4 sm:py-4 md:px-5.5"
                 >
                   <span
                     className={`text-[15px] font-semibold whitespace-nowrap tabular-nums sm:text-lg md:text-xl ${color}`}
                   >
-                    {signedMoney(value as number, "MXN", false)}
+                    {store.signedMoney(value as number, "MXN", false)}
                   </span>
                 </Stat>
               ))}
@@ -127,11 +129,11 @@ export default function RecurringPage() {
                         <AccountTile account={account} className="size-7 rounded-lg" />
                         <span className="min-w-0 flex-1 truncate font-medium">{account.name}</span>
                         <span className="flex flex-col items-end tabular-nums">
-                          <b className="font-semibold">{money(need, account.currency)}</b>
+                          <b className="font-semibold">{store.money(need, account.currency)}</b>
                           <span
                             className={`text-xs ${balance < need ? "text-warning" : "text-muted-foreground"}`}
                           >
-                            Hoy tienes {signedMoney(balance, account.currency, false)}
+                            Hoy tienes {store.signedMoney(balance, account.currency, false)}
                           </span>
                         </span>
                       </div>
@@ -180,7 +182,7 @@ export default function RecurringPage() {
                     ) : (
                       <>
                         {r.is_variable && <span className="font-normal text-subtle">≈ </span>}
-                        {money(r.amount, store.account(r.account_id)?.currency)}
+                        {store.money(r.amount, store.account(r.account_id)?.currency)}
                       </>
                     )}
                   </span>

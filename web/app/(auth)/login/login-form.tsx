@@ -29,9 +29,9 @@ const copy = {
   },
 } as const;
 
-export function LoginForm() {
+export function LoginForm({ initialMode = "signin" }: { initialMode?: Intent }) {
   const [state, action, pending] = useActionState(authenticate, null);
-  const [mode, setMode] = useState<Intent>("signin");
+  const [mode, setMode] = useState(initialMode);
   const t = copy[mode];
   // A result only belongs to the mode that produced it.
   const result = state?.intent === mode ? state : null;
@@ -95,7 +95,7 @@ export function LoginForm() {
             {mode === "signin" && (
               <Link
                 href="/login/forgot-password"
-                className="absolute top-0 right-0 w-auto! text-sm leading-snug text-primary underline-offset-4 hover:underline"
+                className="absolute top-0 right-0 w-auto! text-sm leading-snug text-primary underline-offset-4 hover:underline max-[359px]:text-xs"
               >
                 ¿Olvidaste tu contraseña?
               </Link>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, LoaderCircleIcon } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useActionState } from "react";
@@ -55,6 +55,7 @@ export function RecoverForm() {
                 disabled={pending}
                 className="w-full"
               >
+                {pending && <LoaderCircleIcon className="animate-spin" />}
                 {pending ? "Reenviando…" : "Reenviar correo"}
               </Button>
             </>

@@ -52,7 +52,12 @@ export async function authenticate(_prev: AuthState, formData: FormData): Promis
     if (credentials.password.length < MIN_PASSWORD) {
       return { email: credentials.email, intent, error: weakPassword };
     }
-    const { data, error } = await supabase.auth.signUp({ ...credentials, options });
+    // The confirmation link would otherwise land on the Site URL, which is now the landing page.
+    const origin = (await headers()).get("origin");
+    const { data, error } = await supabase.auth.signUp({
+      ...credentials,
+      options: { ...options, emailRedirectTo: `${origin}/login` },
+    });
     if (error) {
       return {
         email: credentials.email,
@@ -78,7 +83,7 @@ export async function authenticate(_prev: AuthState, formData: FormData): Promis
       };
     }
   }
-  redirect("/");
+  redirect("/dashboard");
 }
 
 export type RecoveryState = { email: string; error?: string; sent?: boolean } | null;
@@ -139,7 +144,7 @@ export async function updatePassword(
         updateErrors[error.code ?? ""] ?? "No pudimos cambiar tu contraseña. Intenta de nuevo.",
     };
   }
-  redirect("/");
+  redirect("/dashboard");
 }
 
 export async function signOut() {
