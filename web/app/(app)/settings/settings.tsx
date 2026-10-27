@@ -217,7 +217,8 @@ export function Settings() {
   );
 }
 
-// The last 12 months; on narrow screens it scrolls, starting at today (the rtl wrapper).
+// The last 12 months; on narrow screens it scrolls (swipe or arrows), starting at today (the rtl
+// wrapper).
 function YearSpending() {
   const store = useStore();
   const from = addDays(store.today, -364);
@@ -226,7 +227,7 @@ function YearSpending() {
   const free = days.filter((d) => !store.spentOn(d)).length;
   return (
     <div className="flex flex-col gap-3 p-5">
-      <div className="overflow-x-auto pb-2 [direction:rtl]">
+      <div className="no-scrollbar overflow-x-auto [direction:rtl]">
         <div className="mr-auto w-max [direction:ltr]">
           <SpendingGrid
             from={from}

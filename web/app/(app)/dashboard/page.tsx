@@ -220,7 +220,7 @@ export default function Home() {
 
       {/* Gastos del mes gets the extra width: its amount shares the row with the month's days. On
           phones each figure takes a row, so that fits there too. */}
-      <div className="stagger grid grid-cols-1 gap-3 md:grid-cols-[1.25fr_1fr] md:gap-4 xl:grid-cols-[1fr_1fr_1.3fr_1fr]">
+      <div className="stagger grid grid-cols-1 gap-3 md:grid-cols-[1.35fr_1fr] md:gap-4 xl:grid-cols-[1fr_1fr_1.3fr_1fr]">
         <Card className="max-md:border-0 max-md:bg-primary max-md:text-primary-foreground">
           <CardContent>
             <Stat
@@ -256,7 +256,7 @@ export default function Home() {
         </Card>
         <Card>
           {/* The month's days sit beside the amount when there's room, below it when not. */}
-          <CardContent className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+          <CardContent className="flex flex-wrap items-end justify-between gap-x-3 gap-y-3">
             <Stat label="Gastos del mes">
               <Amount
                 value={now.expense}

@@ -221,10 +221,10 @@ export const SPENDING_LEVELS = [
 
 const WEEKDAYS = ["", "lun", "", "mié", "", "vie", "", ""]; // a blank over the month labels
 
-// GitHub-style grid of spending per day from `from` to `to`: a column per week (Monday first),
-// shaded by quartile so rent day doesn't wash out the rest. Days still to come stay faint.
-// Hovering, tapping or arrowing through a day shows its date, total and count; `months` labels
-// the months and weekdays, for the yearly view.
+// Spending per day from `from` to `to`, shaded by quartile so rent day doesn't wash out the rest;
+// days still to come stay faint. Laid out as a calendar (a row per week, Monday first) or, with
+// `months`, GitHub-style for the yearly view: a column per week, labeled with months and weekdays.
+// Hovering, tapping or arrowing through a day shows its date, total and count.
 export function SpendingGrid({
   from,
   to,
@@ -254,8 +254,10 @@ export function SpendingGrid({
 
   const pickable = (d: string | undefined): d is string => !!d && d >= from && d <= last;
   const dayAt = (e: React.SyntheticEvent) => (e.target as HTMLElement).dataset.day;
-  // Up and down are days, left and right are weeks, like the grid.
-  const keys: Record<string, number> = { ArrowUp: -1, ArrowDown: 1, ArrowLeft: -7, ArrowRight: 7 };
+  // Arrows follow the layout: across a row is a day in the calendar, a week in the yearly view.
+  const keys: Record<string, number> = months
+    ? { ArrowUp: -1, ArrowDown: 1, ArrowLeft: -7, ArrowRight: 7 }
+    : { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
   const setActive = (d: string | null) => {
     if (d === active) return;
     const cell = d && grid.current?.querySelector(`[data-day="${d}"]`);
@@ -288,8 +290,10 @@ export function SpendingGrid({
         aria-label={`${label}. Usa las flechas para recorrer los días.`}
         tabIndex={0}
         className={cn(
-          "grid w-max cursor-default grid-flow-col auto-cols-[9px] gap-[2px] rounded-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2",
-          months ? "grid-cols-[auto] grid-rows-[auto_repeat(7,9px)]" : "grid-rows-[repeat(7,9px)]",
+          "grid w-max cursor-default gap-[2px] rounded-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2",
+          months
+            ? "grid-flow-col auto-cols-[9px] grid-cols-[auto] grid-rows-[auto_repeat(7,9px)]"
+            : "grid-cols-[repeat(7,8px)] auto-rows-[8px]",
         )}
         onPointerMove={(e) => {
           if (e.pointerType === "mouse" && pickable(dayAt(e))) setActive(dayAt(e)!);
@@ -311,7 +315,11 @@ export function SpendingGrid({
       >
         {months &&
           WEEKDAYS.map((d, i) => (
-            <span key={`wd${i}`} className="pr-1 text-[0.6875rem] leading-[9px] text-subtle">
+            // Pinned to the left edge so they stay put while the year scrolls.
+            <span
+              key={`wd${i}`}
+              className="sticky left-0 z-[1] bg-card pr-1 text-[0.6875rem] leading-[9px] text-subtle"
+            >
               {d}
             </span>
           ))}

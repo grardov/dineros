@@ -217,6 +217,14 @@
   }
 }
 
+/* Scrolls without showing a scrollbar: for strips you swipe or arrow through. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,
