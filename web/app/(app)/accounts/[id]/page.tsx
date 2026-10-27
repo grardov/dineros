@@ -210,7 +210,7 @@ function TransferData({ account, onEdit }: { account: Account; onEdit: () => voi
           <ShareButtons text={text} />
         </div>
       </CardHeader>
-      <div className="grid grid-cols-1 divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <div className="grid grid-cols-1 divide-y lg:grid-cols-3 lg:divide-x lg:divide-y-0">
         {clabe && (
           <CopyRow
             label="CLABE"
