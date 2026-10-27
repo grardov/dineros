@@ -29,9 +29,9 @@ const copy = {
   },
 } as const;
 
-export function LoginForm() {
+export function LoginForm({ initialMode = "signin" }: { initialMode?: Intent }) {
   const [state, action, pending] = useActionState(authenticate, null);
-  const [mode, setMode] = useState<Intent>("signin");
+  const [mode, setMode] = useState(initialMode);
   const t = copy[mode];
   // A result only belongs to the mode that produced it.
   const result = state?.intent === mode ? state : null;

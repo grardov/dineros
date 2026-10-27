@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Refreshes the Supabase session on every request and sends signed-out users to /login.
+// Refreshes the Supabase session on every request; signed-out users only see the landing page
+// and /login, signed-in ones skip both and go to /dashboard.
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   const supabase = createServerClient(
@@ -27,9 +28,10 @@ export async function proxy(request: NextRequest) {
   const signedIn = data?.claims.iss === `${process.env.SUPABASE_URL}/auth/v1`;
   // Email links (/auth/confirm) must work whether or not someone is already signed in.
   if (request.nextUrl.pathname.startsWith("/auth/")) return response;
-  const onLogin = request.nextUrl.pathname.startsWith("/login");
-  if (!signedIn && !onLogin) return NextResponse.redirect(new URL("/login", request.url));
-  if (signedIn && onLogin) return NextResponse.redirect(new URL("/", request.url));
+  const { pathname } = request.nextUrl;
+  const isPublic = pathname === "/" || pathname.startsWith("/login");
+  if (!signedIn && !isPublic) return NextResponse.redirect(new URL("/login", request.url));
+  if (signedIn && isPublic) return NextResponse.redirect(new URL("/dashboard", request.url));
   return response;
 }
 

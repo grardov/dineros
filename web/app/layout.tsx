@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   // absolute URL from the deployment, so there's no metadataBase to keep in sync.
   openGraph: { title: "Dineros", description, siteName: "Dineros", locale: "es_MX" },
   twitter: { card: "summary_large_image" },
-  // Everything sits behind a login with private data; only /login opts back in.
+  // Everything sits behind a login with private data; the landing page and /login opt back in.
   robots: { index: false, follow: false },
   appleWebApp: { title: "Dineros" },
   // Keep iOS from turning amounts and account numbers into phone links.

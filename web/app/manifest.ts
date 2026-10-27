@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Dineros",
     description: "Lleva tus cuentas, tarjetas, gastos fijos y movimientos en un solo lugar.",
     lang: "es",
-    start_url: "/",
+    start_url: "/dashboard",
     display: "standalone",
     background_color: "#f6f7f9",
     theme_color: "#f6f7f9",
