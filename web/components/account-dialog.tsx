@@ -9,7 +9,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { deleteAccount, saveAccount } from "@/lib/actions";
 import { findInstitution, INSTITUTIONS } from "@/lib/institutions";
 import { useStore } from "@/lib/store";
-import { ACCOUNT_TYPES, type Account, type AccountType, money } from "@/lib/types";
+import { ACCOUNT_TYPES, type Account, type AccountType } from "@/lib/types";
 
 export const NAME_EXAMPLES: Record<AccountType, string> = {
   debit: "Ej. Nómina",
@@ -47,7 +47,8 @@ export function AccountDialog({
   onClose: () => void;
 }) {
   const [type, setType] = useState<AccountType>(account?.type ?? "debit");
-  const { profile } = useStore();
+  const store = useStore();
+  const { profile } = store;
   const [currency, setCurrency] = useState(account?.currency ?? profile.currency);
   // A saved name we know ("BBVA México") selects that institution; anything else is "Otra".
   const [institution, setInstitution] = useState(() =>
@@ -218,7 +219,7 @@ export function AccountDialog({
             />
             <FieldDescription>
               {limit
-                ? `Disponible: ${money(limit - (debt ?? 0), currency)}. `
+                ? `Disponible: ${store.money(limit - (debt ?? 0), currency)}. `
                 : "Déjalo vacío si tu tarjeta no tiene límite fijo. "}
               Es el límite total, no el disponible: si tu banco solo muestra el disponible, súmale
               tu saldo total.

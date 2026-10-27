@@ -4,6 +4,8 @@ import {
   BanknoteIcon,
   ChevronRightIcon,
   CreditCardIcon,
+  EyeIcon,
+  EyeOffIcon,
   LandmarkIcon,
   PiggyBankIcon,
   TrendingUpIcon,
@@ -13,9 +15,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { findInstitution } from "@/lib/institutions";
 import { useStore } from "@/lib/store";
-import { type Account, type AccountType, MINUS, money, signedMoney } from "@/lib/types";
+import type { Account, AccountType } from "@/lib/types";
 import { cn } from "cn";
 
 // Large amounts: the cents go muted so the whole figure carries the weight.
@@ -30,8 +33,9 @@ export function Amount({
   className?: string;
   centsClassName?: string;
 }) {
-  const s = (value < 0 ? MINUS : "") + money(Math.abs(value), currency);
-  const dot = s.lastIndexOf(".");
+  const store = useStore();
+  const s = store.signedMoney(value, currency, false);
+  const dot = store.hidden ? s.length : s.lastIndexOf(".");
   return (
     <span className={cn("font-semibold tracking-tight tabular-nums", className)}>
       {s.slice(0, dot)}
@@ -68,6 +72,7 @@ export function CountUpAmount({
   deltaClassName,
   ...props
 }: React.ComponentProps<typeof Amount> & { deltaClassName?: string }) {
+  const store = useStore();
   const shown = useCountUp(value);
   const [prev, setPrev] = useState(value);
   const [change, setChange] = useState<{ n: number; delta: number } | null>(null);
@@ -95,7 +100,7 @@ export function CountUpAmount({
             deltaClassName,
           )}
         >
-          {signedMoney(change.delta, props.currency)}
+          {store.signedMoney(change.delta, props.currency)}
         </span>
       )}
     </span>
@@ -199,7 +204,25 @@ export const dayMonth = (iso: string) =>
     .toLocaleDateString("es-MX", { day: "numeric", month: "short" })
     .replace(".", "");
 
-// Page title with an optional muted line above it and actions on the right.
+// Hides every amount in the app at once, for when someone could see the screen.
+function HideAmountsButton() {
+  const store = useStore();
+  const Icon = store.hidden ? EyeOffIcon : EyeIcon;
+  return (
+    <Button
+      variant="outline"
+      size="icon"
+      aria-label={store.hidden ? "Mostrar cantidades" : "Ocultar cantidades"}
+      aria-pressed={store.hidden}
+      title={store.hidden ? "Mostrar cantidades" : "Ocultar cantidades"}
+      onClick={store.toggleHidden}
+    >
+      <Icon />
+    </Button>
+  );
+}
+
+// Page title with an optional muted line above it, actions and the hide-amounts toggle on the right.
 export function PageHeader({
   eyebrow,
   title,
@@ -217,7 +240,10 @@ export function PageHeader({
           {title}
         </h1>
       </div>
-      {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
+      <div className="flex flex-wrap items-center gap-2">
+        {children}
+        <HideAmountsButton />
+      </div>
     </div>
   );
 }
