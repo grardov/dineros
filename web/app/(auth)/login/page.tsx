@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 
 import { LoginForm } from "./login-form";
 
-export const metadata: Metadata = { title: "Entrar · Dineros" };
+// The one public page: let search engines index it so the app can be found by name.
+export const metadata: Metadata = { title: "Entrar", robots: { index: true, follow: false } };
 
 export default function LoginPage() {
   return <LoginForm />;
