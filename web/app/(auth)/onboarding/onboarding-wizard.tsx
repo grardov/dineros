@@ -487,7 +487,7 @@ export function OnboardingWizard({ categories }: { categories: Category[] }) {
                 type="button"
                 size="lg"
                 className="h-11 w-full"
-                onClick={() => router.push("/")}
+                onClick={() => router.push("/dashboard")}
               >
                 Ir a mi resumen
               </Button>

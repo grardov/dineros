@@ -14,7 +14,7 @@ import { usePathname } from "next/navigation";
 import { NewTransactionButton } from "@/components/transaction-list";
 
 const LINKS = [
-  { href: "/", label: "Resumen", icon: HouseIcon },
+  { href: "/dashboard", label: "Resumen", icon: HouseIcon },
   { href: "/transactions", label: "Movimientos", icon: ArrowLeftRightIcon },
   { href: "/recurring", label: "Fijos", icon: RepeatIcon },
   { href: "/accounts", label: "Cuentas", icon: WalletIcon },
@@ -23,8 +23,7 @@ const LINKS = [
 // The phone tab bar fits four around "+"; Categorías stays in the sidebar and on Resumen.
 const MOBILE = LINKS.filter((l) => l.href !== "/categories");
 
-const isActive = (href: string, pathname: string) =>
-  href === "/" ? pathname === "/" : pathname.startsWith(href);
+const isActive = (href: string, pathname: string) => pathname.startsWith(href);
 
 // Vertical list in the sidebar from md up.
 export function NavLinks() {

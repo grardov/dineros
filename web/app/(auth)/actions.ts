@@ -54,7 +54,7 @@ export async function authenticate(_prev: AuthState, formData: FormData): Promis
       return { email: credentials.email, intent, error: "Correo o contraseña incorrectos." };
     }
   }
-  redirect("/");
+  redirect("/dashboard");
 }
 
 export type RecoveryState = { email: string; error?: string; sent?: boolean } | null;
@@ -95,7 +95,7 @@ export async function updatePassword(
         updateErrors[error.code ?? ""] ?? "No pudimos cambiar tu contraseña. Intenta de nuevo.",
     };
   }
-  redirect("/");
+  redirect("/dashboard");
 }
 
 export async function signOut() {
