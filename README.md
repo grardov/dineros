@@ -52,13 +52,28 @@ Ramas: los PRs van a `staging`; `main` es producción.
 - **Release:** al terminar el deploy, si la versión del `package.json` raíz no tiene release, crea
   el tag `vX.Y.Z` y su GitHub Release con notas generadas.
 
+### Títulos de PR
+
+Los PRs a `staging` se hacen squash, así que su título es el commit. Sigue
+[Conventional Commits](https://www.conventionalcommits.org): `<tipo>[(scope)][!]: <resumen>`, p. ej.
+`feat(web): Share CLABE without opening the bank app`. [`pr.yml`](.github/workflows/pr.yml) lo
+valida y pone el tipo como label.
+
+| Tipo       | Para                                                    | Versión |
+| ---------- | ------------------------------------------------------- | ------- |
+| `feat`     | Algo nuevo o mejorado que el usuario nota               | minor   |
+| `fix`      | Un bug                                                  | patch   |
+| `perf`     | Más rápido, mismo comportamiento                        | patch   |
+| `refactor` | Cambia código sin cambiar comportamiento                | patch   |
+| `docs`     | Solo documentación                                      | patch   |
+| `chore`    | CI, dependencias, tooling, releases (`chore(ci): ...`)  | patch   |
+| `<tipo>!`  | Rompe algo: datos, API o flujos que el usuario ya usaba | major   |
+
 ### Hacer un release
 
-```bash
-pnpm version minor --no-git-tag-version   # o patch / major, en staging
-git commit -am "Release v$(jq -r .version package.json)" && git push
-gh pr create --base main --head staging --title "Release v$(jq -r .version package.json)" --fill
-```
+En `staging`, `scripts/release.sh` sube la versión según los títulos desde el último release, hace
+el commit y abre el PR a `main`. `scripts/release.sh minor` fuerza el nivel. Las notas del release
+se agrupan por label ([`release.yml`](.github/release.yml)).
 
 Haz merge con **merge commit** (no squash) para que `staging` y `main` no diverjan.
 

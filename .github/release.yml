@@ -1,0 +1,13 @@
+# Groups the notes deploy.yml generates by the type label .github/workflows/pr.yml puts on each PR.
+changelog:
+  exclude:
+    labels: [release]
+  categories:
+    - title: Features
+      labels: [feat]
+    - title: Fixes
+      labels: [fix]
+    - title: Performance
+      labels: [perf]
+    - title: Other changes
+      labels: ["*"]
