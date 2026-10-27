@@ -1,19 +1,21 @@
 import "server-only";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { cache } from "react";
 
 import { api } from "@/lib/api";
 import { createClient } from "@/lib/supabase";
-import type {
-  Account,
-  Category,
-  CreditCardStatement,
-  Profile,
-  Recurring,
-  RecurringOccurrence,
-  Transaction,
+import {
+  type Account,
+  type Category,
+  type CreditCardStatement,
+  type Profile,
+  type Recurring,
+  type RecurringOccurrence,
+  type Transaction,
+  HIDE_AMOUNTS,
 } from "@/lib/types";
 
 // core sends Decimal as a string; these are the money fields to turn into numbers.
@@ -60,6 +62,7 @@ export async function loadData() {
   );
 
   return {
+    hideAmounts: (await cookies()).get(HIDE_AMOUNTS)?.value === "1",
     email: claims.data?.claims.email ?? "",
     profile,
     accounts: accounts.map((a) =>

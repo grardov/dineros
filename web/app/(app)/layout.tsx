@@ -100,7 +100,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex flex-1 flex-col md:flex-row">
       <aside className="hidden flex-col gap-7 border-r bg-sidebar px-3 pt-5.5 pb-4 md:sticky md:top-0 md:flex md:h-svh md:w-56 md:shrink-0">
-        <Logo />
+        <Logo href="/dashboard" />
         {/* usePathname on /cuentas/[id] is only known at request time */}
         <Suspense fallback={<NavSkeleton />}>
           <NavLinks />
@@ -112,7 +112,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
         </div>
       </aside>
       <header className="flex items-center justify-between px-4 pt-3 md:hidden">
-        <Logo />
+        <Logo href="/dashboard" />
         <Suspense fallback={<UserSkeleton compact />}>
           <User compact />
         </Suspense>

@@ -27,7 +27,7 @@ export default function OnboardingPage() {
 async function Onboarding() {
   await connection();
   const profile = await getProfile();
-  if (profile.onboarded_at) redirect("/");
+  if (profile.onboarded_at) redirect("/dashboard");
   const supabase = await createClient();
   const [{ data }, categories] = await Promise.all([
     supabase.auth.getClaims(),

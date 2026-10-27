@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
-import { type Recurring, type RecurringOccurrence, money, signedMoney } from "@/lib/types";
+import { type Recurring, type RecurringOccurrence } from "@/lib/types";
 import { cn } from "cn";
 
 export type Occurrence = RecurringOccurrence & { fijo: Recurring };
@@ -124,7 +124,7 @@ export function OccurrenceRow({ o, onEdit }: { o: Occurrence; onEdit?: () => voi
             {o.is_estimate && o.status !== "paid" && (
               <span className="font-normal text-subtle">≈ </span>
             )}
-            {signedMoney(
+            {store.signedMoney(
               fijo.kind === "income" ? amount : -amount,
               account?.currency,
               fijo.kind === "income",
@@ -132,13 +132,13 @@ export function OccurrenceRow({ o, onEdit }: { o: Occurrence; onEdit?: () => voi
           </span>
           {o.paid_amount > 0 && o.status !== "paid" && (
             <span className="text-xs text-muted-foreground tabular-nums">
-              Pagado {money(o.paid_amount, account?.currency)}
+              Pagado {store.money(o.paid_amount, account?.currency)}
             </span>
           )}
           {onCard && <span className="text-xs text-muted-foreground">En tarjeta</span>}
           {o.fijo_charges > 0 && (
             <span className="text-xs text-muted-foreground tabular-nums">
-              Incluye ≈ {money(o.fijo_charges, account?.currency)} de fijos
+              Incluye ≈ {store.money(o.fijo_charges, account?.currency)} de fijos
             </span>
           )}
         </span>
@@ -196,8 +196,8 @@ export function FijosCard() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{monthName(now.month, false)}</span>
                 <span className="tabular-nums">
-                  <b className="font-semibold">{money(paidOut)}</b>
-                  <span className="text-muted-foreground"> de {money(now.out)}</span>
+                  <b className="font-semibold">{store.money(paidOut)}</b>
+                  <span className="text-muted-foreground"> de {store.money(now.out)}</span>
                 </span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
@@ -208,22 +208,22 @@ export function FijosCard() {
               </div>
               {now.leftOut > 0 && (
                 <span className="text-xs text-muted-foreground tabular-nums">
-                  Faltan {money(now.leftOut)}
+                  Faltan {store.money(now.leftOut)}
                 </span>
               )}
             </div>
             <div className="flex justify-between border-t border-muted pt-3">
               <span className="text-muted-foreground">{monthName(next.month, false)}</span>
               <span className="flex flex-col items-end gap-0.5 tabular-nums">
-                <b className="font-semibold">{signedMoney(-next.out, "MXN", false)}</b>
+                <b className="font-semibold">{store.signedMoney(-next.out, "MXN", false)}</b>
                 {next.income > 0 &&
                   (next.income >= next.out ? (
                     <span className="text-xs text-muted-foreground">
-                      Te sobran {money(next.income - next.out)}
+                      Te sobran {store.money(next.income - next.out)}
                     </span>
                   ) : (
                     <span className="text-xs font-medium text-expense">
-                      Te faltan {money(next.out - next.income)}
+                      Te faltan {store.money(next.out - next.income)}
                     </span>
                   ))}
               </span>
