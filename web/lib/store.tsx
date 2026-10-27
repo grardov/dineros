@@ -9,7 +9,7 @@ import type { StoreData } from "@/lib/data";
 import { HIDE_AMOUNTS, money, signedMoney } from "@/lib/types";
 
 const pad = (n: number) => String(n).padStart(2, "0");
-const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+export const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 const MASK = "$••••";
 
