@@ -2,6 +2,7 @@
 
 import {
   ArrowLeftRightIcon,
+  HeartPulseIcon,
   HouseIcon,
   PlusIcon,
   RepeatIcon,
@@ -19,9 +20,11 @@ const LINKS = [
   { href: "/recurring", label: "Fijos", icon: RepeatIcon },
   { href: "/accounts", label: "Cuentas", icon: WalletIcon },
   { href: "/categories", label: "Categorías", icon: TagsIcon },
+  { href: "/health", label: "Salud", icon: HeartPulseIcon },
 ];
-// The phone tab bar fits four around "+"; Categorías stays in the sidebar and on Resumen.
-const MOBILE = LINKS.filter((l) => l.href !== "/categories");
+// The phone tab bar fits four around "+": Categorías is reached from Resumen, Salud from the
+// account menu.
+const MOBILE = LINKS.filter((l) => l.href !== "/categories" && l.href !== "/health");
 
 const isActive = (href: string, pathname: string) => pathname.startsWith(href);
 

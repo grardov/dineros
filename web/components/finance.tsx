@@ -2,6 +2,7 @@
 
 import {
   BanknoteIcon,
+  ChevronLeftIcon,
   ChevronRightIcon,
   CreditCardIcon,
   EyeIcon,
@@ -300,6 +301,43 @@ export function EmptyState({
         {children && <p className="text-sm text-muted-foreground">{children}</p>}
       </div>
       {action && <div className="mt-1 flex flex-wrap justify-center gap-2">{action}</div>}
+    </div>
+  );
+}
+
+// "‹ Octubre de 2026 ›": steps a month back or forward, never past `max` (this month) or `min`.
+export function MonthPicker({
+  month,
+  onChange,
+  min,
+  max,
+}: {
+  month: string;
+  onChange: (month: string) => void;
+  min?: string;
+  max: string;
+}) {
+  return (
+    <div className="flex h-9 items-center rounded-md border border-input bg-card px-1 text-sm font-medium">
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Mes anterior"
+        disabled={!!min && month <= min}
+        onClick={() => onChange(shiftMonth(month, -1))}
+      >
+        <ChevronLeftIcon className="text-muted-foreground" />
+      </Button>
+      <span className="w-32 text-center">{monthName(month)}</span>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Mes siguiente"
+        disabled={month >= max}
+        onClick={() => onChange(shiftMonth(month, 1))}
+      >
+        <ChevronRightIcon className="text-muted-foreground" />
+      </Button>
     </div>
   );
 }

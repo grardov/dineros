@@ -3,6 +3,7 @@
 
 export type AccountType = "debit" | "credit" | "cash" | "savings" | "investment";
 export type CategoryKind = "expense" | "income";
+export type CategoryBucket = "need" | "want";
 export type TransactionKind = "expense" | "income" | "transfer";
 
 export type Account = {
@@ -33,6 +34,11 @@ export type Profile = {
   tax_zip: string | null;
   tax_regime: string | null; // TAX_REGIMES key
   cfdi_use: string | null; // CFDI_USES key
+  // Salud financiera: the rule as % of income (adding up to 100) and the emergency fund goal.
+  needs_pct: number;
+  wants_pct: number;
+  savings_pct: number;
+  emergency_months: number;
   onboarded_at: string | null; // null until onboarding is done
   created_at: string;
 };
@@ -43,6 +49,8 @@ export type Category = {
   icon: string | null; // an emoji
   kind: CategoryKind;
   parent_id: string | null;
+  // Expenses only: null on a subcategory follows its parent; on a top-level one, not classified.
+  bucket: CategoryBucket | null;
   created_at: string;
 };
 
@@ -159,6 +167,19 @@ export const TRANSACTION_KINDS: Record<TransactionKind, string> = {
   expense: "Gasto",
   income: "Ingreso",
   transfer: "Transferencia",
+};
+
+export const CATEGORY_BUCKETS: Record<CategoryBucket, string> = {
+  need: "Necesidad",
+  want: "Deseo",
+};
+
+// Income, or spending in a bucket (null: not classified), in a month; from /transactions/monthly/.
+export type MonthlyTotal = {
+  month: string; // YYYY-MM-01
+  kind: "income" | "expense";
+  bucket: CategoryBucket | null;
+  amount: number;
 };
 
 export const CATEGORY_KINDS: Record<CategoryKind, string> = {
