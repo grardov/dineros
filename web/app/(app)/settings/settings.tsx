@@ -6,6 +6,7 @@ import { useActionState, useState, useTransition } from "react";
 import { requestPasswordReset, signOutEverywhere } from "@/app/(auth)/actions";
 import { CURRENCIES } from "@/components/account-dialog";
 import { PageHeader } from "@/components/finance";
+import { ShareButtons, shareText } from "@/components/share";
 import { Avatar, initials } from "@/components/user-menu";
 import {
   AlertDialog,
@@ -25,6 +26,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { toast } from "@/components/ui/toast";
 import { deleteUser, saveProfile } from "@/lib/actions";
 import { useStore } from "@/lib/store";
+import { CFDI_USES, type Profile, TAX_REGIMES } from "@/lib/types";
 
 function Section({
   title,
@@ -81,13 +83,9 @@ export function Settings() {
     year: "numeric",
   });
 
-  const save = (patch: Partial<Parameters<typeof saveProfile>[0]>) =>
+  const save = (patch: Parameters<typeof saveProfile>[0]) =>
     startTransition(async () => {
-      const err = await saveProfile({
-        display_name: profile.display_name,
-        currency: profile.currency,
-        ...patch,
-      });
+      const err = await saveProfile(patch);
       toast.add(
         err ? { title: err, type: "error" } : { title: "Cambios guardados", type: "success" },
       );
@@ -160,6 +158,13 @@ export function Settings() {
           </Row>
         </Section>
 
+        <Section
+          title="Datos fiscales"
+          description="Para pedir factura: compártelos en vez de dictarlos."
+        >
+          <FiscalData profile={profile} email={email} />
+        </Section>
+
         <Section title="Seguridad" description="Acceso a tu cuenta.">
           <Row
             title="Contraseña"
@@ -205,6 +210,134 @@ export function Settings() {
         </Section>
       </div>
     </>
+  );
+}
+
+const label = (catalog: Record<string, string>, code: string | null) =>
+  code && `${code} · ${catalog[code] ?? ""}`;
+
+function FiscalData({ profile, email }: { profile: Profile; email: string }) {
+  const [pending, startTransition] = useTransition();
+  const text = shareText("Datos fiscales", [
+    ["RFC", profile.rfc],
+    ["Nombre", profile.legal_name],
+    ["Código postal", profile.tax_zip],
+    ["Régimen fiscal", label(TAX_REGIMES, profile.tax_regime)],
+    ["Uso de CFDI", label(CFDI_USES, profile.cfdi_use)],
+    ["Correo", email],
+  ]);
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const d = new FormData(e.currentTarget);
+        const value = (key: string) => String(d.get(key) ?? "").trim() || null;
+        const rfc = value("rfc")?.toUpperCase() ?? null;
+        const zip = value("tax_zip");
+        if (rfc && !/^[A-ZÑ&]{3,4}\d{6}[A-Z\d]{3}$/.test(rfc))
+          return void toast.add({
+            title: "El RFC no es válido: son 12 o 13 caracteres, con homoclave.",
+            type: "error",
+          });
+        if (zip && !/^\d{5}$/.test(zip))
+          return void toast.add({ title: "El código postal son 5 dígitos.", type: "error" });
+        startTransition(async () => {
+          const err = await saveProfile({
+            rfc,
+            legal_name: value("legal_name")?.toUpperCase() ?? null,
+            tax_zip: zip,
+            tax_regime: value("tax_regime"),
+            cfdi_use: value("cfdi_use"),
+          });
+          toast.add(
+            err ? { title: err, type: "error" } : { title: "Cambios guardados", type: "success" },
+          );
+        });
+      }}
+    >
+      <div className="flex flex-col gap-4 p-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_8rem]">
+          <Field>
+            <FieldLabel htmlFor="rfc">RFC</FieldLabel>
+            <Input
+              id="rfc"
+              name="rfc"
+              maxLength={13}
+              autoComplete="off"
+              className="uppercase placeholder:normal-case"
+              placeholder="Con homoclave"
+              defaultValue={profile.rfc ?? ""}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="tax_zip">Código postal</FieldLabel>
+            <Input
+              id="tax_zip"
+              name="tax_zip"
+              inputMode="numeric"
+              maxLength={5}
+              autoComplete="postal-code"
+              defaultValue={profile.tax_zip ?? ""}
+            />
+          </Field>
+        </div>
+        <Field>
+          <FieldLabel htmlFor="legal_name">Nombre o razón social</FieldLabel>
+          <Input
+            id="legal_name"
+            name="legal_name"
+            maxLength={254}
+            className="uppercase placeholder:normal-case"
+            placeholder="Tal cual aparece en tu Constancia de Situación Fiscal"
+            defaultValue={profile.legal_name ?? ""}
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="tax_regime">Régimen fiscal</FieldLabel>
+          <NativeSelect
+            id="tax_regime"
+            name="tax_regime"
+            className="w-full"
+            defaultValue={profile.tax_regime ?? ""}
+          >
+            <NativeSelectOption value="">Sin elegir</NativeSelectOption>
+            {Object.keys(TAX_REGIMES).map((code) => (
+              <NativeSelectOption key={code} value={code}>
+                {label(TAX_REGIMES, code)}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="cfdi_use">Uso de CFDI habitual</FieldLabel>
+          <NativeSelect
+            id="cfdi_use"
+            name="cfdi_use"
+            className="w-full"
+            defaultValue={profile.cfdi_use ?? ""}
+          >
+            <NativeSelectOption value="">Sin elegir</NativeSelectOption>
+            {Object.keys(CFDI_USES).map((code) => (
+              <NativeSelectOption key={code} value={code}>
+                {label(CFDI_USES, code)}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </Field>
+      </div>
+      <div className="flex flex-wrap items-center justify-end gap-3 border-t bg-sidebar px-5 py-3.5">
+        {profile.rfc && (
+          <div className="mr-auto flex gap-2">
+            <ShareButtons text={text} />
+          </div>
+        )}
+        <Button type="submit" disabled={pending}>
+          {pending && <LoaderCircleIcon className="animate-spin" />}
+          Guardar
+        </Button>
+      </div>
+    </form>
   );
 }
 

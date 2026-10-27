@@ -16,6 +16,10 @@ export type Account = {
   credit_limit: number | null;
   statement_day: number | null;
   payment_due_day: number | null;
+  // To receive transfers (digits only); never on cash accounts.
+  clabe: string | null;
+  account_number: string | null;
+  card_number: string | null;
   archived_at: string | null;
   created_at: string;
 };
@@ -23,6 +27,12 @@ export type Account = {
 export type Profile = {
   display_name: string | null;
   currency: string; // for new accounts
+  // Datos fiscales for a factura.
+  rfc: string | null;
+  legal_name: string | null; // as in the Constancia de Situación Fiscal
+  tax_zip: string | null;
+  tax_regime: string | null; // TAX_REGIMES key
+  cfdi_use: string | null; // CFDI_USES key
   onboarded_at: string | null; // null until onboarding is done
   created_at: string;
 };
@@ -112,6 +122,37 @@ export const ACCOUNT_TYPES: Record<AccountType, string> = {
   cash: "Efectivo",
   savings: "Ahorro",
   investment: "Inversión",
+};
+
+// SAT catalogs, personas físicas only: c_RegimenFiscal and c_UsoCFDI.
+export const TAX_REGIMES: Record<string, string> = {
+  "605": "Sueldos y salarios",
+  "606": "Arrendamiento",
+  "607": "Enajenación o adquisición de bienes",
+  "608": "Demás ingresos",
+  "610": "Residentes en el extranjero",
+  "611": "Ingresos por dividendos",
+  "612": "Actividades empresariales y profesionales",
+  "614": "Ingresos por intereses",
+  "615": "Obtención de premios",
+  "616": "Sin obligaciones fiscales",
+  "621": "Incorporación fiscal",
+  "625": "Plataformas tecnológicas",
+  "626": "Régimen Simplificado de Confianza",
+};
+
+export const CFDI_USES: Record<string, string> = {
+  G01: "Adquisición de mercancías",
+  G03: "Gastos en general",
+  D01: "Honorarios médicos, dentales y hospitalarios",
+  D02: "Gastos médicos por incapacidad o discapacidad",
+  D03: "Gastos funerales",
+  D04: "Donativos",
+  D05: "Intereses reales de créditos hipotecarios",
+  D07: "Primas de seguros de gastos médicos",
+  D08: "Transporte escolar obligatorio",
+  D10: "Servicios educativos (colegiaturas)",
+  S01: "Sin efectos fiscales",
 };
 
 export const TRANSACTION_KINDS: Record<TransactionKind, string> = {

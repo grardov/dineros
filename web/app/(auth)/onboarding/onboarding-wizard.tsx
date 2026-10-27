@@ -122,6 +122,9 @@ export function OnboardingWizard({ categories }: { categories: Category[] }) {
           credit_limit: null,
           statement_day: credit ? Number(statementDay) : null,
           payment_due_day: credit ? Number(dueDay) : null,
+          clabe: null,
+          account_number: null,
+          card_number: null,
           archived_at: null,
         },
         recurring: (withFijos ? chosen : []).map((f) => ({
