@@ -5,7 +5,7 @@ import { useActionState, useState, useTransition } from "react";
 
 import { requestPasswordReset, signOutEverywhere } from "@/app/(auth)/actions";
 import { CURRENCIES } from "@/components/account-dialog";
-import { PageHeader } from "@/components/finance";
+import { PageHeader, SPENDING_LEVELS, SpendingGrid, addDays } from "@/components/finance";
 import { ShareButtons, shareText } from "@/components/share";
 import { Avatar, initials } from "@/components/user-menu";
 import {
@@ -140,6 +140,10 @@ export function Settings() {
           </form>
         </Section>
 
+        <Section title="Tu año" description="Lo que gastaste cada día, sin contar fijos.">
+          <YearSpending />
+        </Section>
+
         <Section title="Preferencias" description="La moneda con la que empiezan tus cuentas.">
           <Row title="Moneda principal" description="La proponemos al crear una cuenta nueva.">
             <NativeSelect
@@ -210,6 +214,41 @@ export function Settings() {
         </Section>
       </div>
     </>
+  );
+}
+
+// The last 12 months; on narrow screens it scrolls, starting at today (the rtl wrapper).
+function YearSpending() {
+  const store = useStore();
+  const from = addDays(store.today, -364);
+  const days = Array.from({ length: 365 }, (_, i) => addDays(from, i));
+  const total = days.reduce((s, d) => s + store.spentOn(d), 0);
+  const free = days.filter((d) => !store.spentOn(d)).length;
+  return (
+    <div className="flex flex-col gap-3 p-5">
+      <div className="overflow-x-auto pb-2 [direction:rtl]">
+        <div className="w-max [direction:ltr]">
+          <SpendingGrid
+            from={from}
+            to={store.today}
+            months
+            label="Gasto variable por día en los últimos 12 meses"
+          />
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs text-muted-foreground">
+        <span className="tabular-nums">
+          {store.money(total)} en el año · {free} días sin gastos
+        </span>
+        <span className="flex items-center gap-[3px]" aria-hidden>
+          Menos
+          {SPENDING_LEVELS.map((c) => (
+            <span key={c} className={`size-[9px] rounded-[2px] ${c}`} />
+          ))}
+          Más
+        </span>
+      </div>
+    </div>
   );
 }
 

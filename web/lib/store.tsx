@@ -28,6 +28,7 @@ function useStoreValue(data: StoreData) {
       transactions: data.transactions, // newest first
       recurring: data.recurring,
       occurrences: data.occurrences, // this month and next, by due date
+      spentOn: (day: string) => data.daily[day] ?? 0, // without fijos; the last year only
       today,
       hidden,
       toggleHidden: () => {

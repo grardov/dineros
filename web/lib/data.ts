@@ -29,6 +29,8 @@ const toNumbers = <T, K extends keyof T>(row: Wire<T, K>, keys: K[]) =>
 // Shared by the layout's data and its user menu within a request.
 export const getProfile = cache(() => api<Profile>("/profile/"));
 
+type Daily = { day: string; amount: number };
+
 type Balance = { account_id: string; balance: number; available_credit: number | null };
 
 // Everything the (app) pages read, fetched once per request as the signed-in user.
@@ -38,7 +40,10 @@ export async function loadData() {
   await connection();
   const profile = await getProfile();
   if (!profile.onboarded_at) redirect("/onboarding");
-  const [claims, accounts, categories, transactions, balances, recurring, occurrences] =
+  // A year of daily spending (53 weeks and change) for the heatmaps; a sum per day, so it isn't
+  // capped like the transactions are.
+  const since = new Date(Date.now() - 380 * 86_400_000).toISOString().slice(0, 10);
+  const [claims, accounts, categories, transactions, balances, recurring, occurrences, daily] =
     await Promise.all([
       createClient().then((s) => s.auth.getClaims()),
       api<Wire<Account, "opening_balance" | "last_statement_pending" | "credit_limit">[]>(
@@ -51,6 +56,7 @@ export async function loadData() {
       api<Wire<RecurringOccurrence, "expected_amount" | "paid_amount" | "fijo_charges">[]>(
         "/recurring/occurrences/",
       ),
+      api<Wire<Daily, "amount">[]>(`/transactions/daily/?since=${since}`),
     ]);
   const credit = accounts.filter((a) => a.type === "credit");
   const statements = await Promise.all(
@@ -74,6 +80,7 @@ export async function loadData() {
     occurrences: occurrences.map((o) =>
       toNumbers(o, ["expected_amount", "paid_amount", "fijo_charges"]),
     ), // by due date
+    daily: Object.fromEntries(daily.map((d) => [d.day, Number(d.amount)])),
     balances: Object.fromEntries(
       balances.map((b) => [b.account_id, toNumbers(b, ["balance", "available_credit"])]),
     ),

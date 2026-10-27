@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { findInstitution } from "@/lib/institutions";
-import { useStore } from "@/lib/store";
+import { iso, useStore } from "@/lib/store";
 import type { Account, AccountType } from "@/lib/types";
 import { cn } from "cn";
 
@@ -203,6 +203,86 @@ export const dayMonth = (iso: string) =>
   new Date(`${iso}T00:00:00`)
     .toLocaleDateString("es-MX", { day: "numeric", month: "short" })
     .replace(".", "");
+
+export const addDays = (day: string, n: number) => {
+  const d = new Date(`${day}T00:00:00`);
+  d.setDate(d.getDate() + n);
+  return iso(d);
+};
+
+export const SPENDING_LEVELS = [
+  "bg-muted",
+  "bg-expense/25",
+  "bg-expense/50",
+  "bg-expense/75",
+  "bg-expense",
+];
+
+// GitHub-style grid of spending per day from `from` to `to`: a column per week (Monday first),
+// shaded by quartile so rent day doesn't wash out the rest. Days still to come stay faint.
+// `months` labels the columns where a month starts, for the yearly view.
+export function SpendingGrid({
+  from,
+  to,
+  months,
+  label,
+}: {
+  from: string;
+  to: string;
+  months?: boolean;
+  label: string;
+}) {
+  const store = useStore();
+  const start = addDays(from, -((new Date(`${from}T00:00:00`).getDay() + 6) % 7));
+  const weeks = Math.ceil((daysUntil(start, to) + 1) / 7);
+  const last = to < store.today ? to : store.today;
+  const spent = Array.from({ length: Math.max(daysUntil(from, last) + 1, 0) }, (_, i) =>
+    store.spentOn(addDays(from, i)),
+  )
+    .filter(Boolean)
+    .sort((a, b) => a - b);
+  const quartiles = [0.25, 0.5, 0.75].map((p) => spent[Math.floor(p * (spent.length - 1))]);
+  const level = (v: number) => (v > 0 ? 1 + quartiles.filter((q) => v > q).length : 0);
+
+  return (
+    <div
+      role="img"
+      aria-label={label}
+      className={cn(
+        "grid w-max grid-flow-col auto-cols-[9px] gap-[2px]",
+        months ? "grid-rows-[auto_repeat(7,9px)]" : "grid-rows-[repeat(7,9px)]",
+      )}
+    >
+      {Array.from({ length: weeks }, (_, w) => {
+        const days = Array.from({ length: 7 }, (_, i) => addDays(start, w * 7 + i));
+        const first = days.find((d) => d.endsWith("-01") && d >= from && d <= to);
+        return [
+          months && (
+            <span key={w} className="pb-0.5 text-[0.6875rem] whitespace-nowrap text-subtle">
+              {first && monthName(first, false).slice(0, 3).toLowerCase()}
+            </span>
+          ),
+          ...days.map((d) => (
+            <span
+              key={d}
+              title={
+                d <= store.today ? `${dayMonth(d)} · ${store.money(store.spentOn(d))}` : undefined
+              }
+              className={cn(
+                "rounded-[2px]",
+                d < from || d > to
+                  ? "invisible"
+                  : d > store.today
+                    ? "bg-muted/50"
+                    : SPENDING_LEVELS[level(store.spentOn(d))],
+              )}
+            />
+          )),
+        ];
+      })}
+    </div>
+  );
+}
 
 // Hides every amount in the app at once, for when someone could see the screen.
 function HideAmountsButton() {

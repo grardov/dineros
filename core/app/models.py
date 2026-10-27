@@ -100,6 +100,11 @@ class Transaction(TransactionCreate, table=True):
     created_at: datetime = Field(default_factory=_now)
 
 
+class DailySpending(SQLModel):
+    day: date
+    amount: Decimal
+
+
 class RecurringCreate(SQLModel):
     """A "fijo": recurring income, expense or transfer. amount is None only for a credit card
     payment, which takes the statement due that month."""

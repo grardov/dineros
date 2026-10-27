@@ -21,8 +21,10 @@ import {
   EmptyState,
   MoreLink,
   PageHeader,
+  SpendingGrid,
   Stat,
   UtilizationBar,
+  addDays,
   capitalize,
   dayMonth,
   monthName,
@@ -33,100 +35,8 @@ import { FijosCard } from "@/components/recurring";
 import { NewTransactionButton, TransactionRows } from "@/components/transaction-list";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { iso, useStore } from "@/lib/store";
+import { useStore } from "@/lib/store";
 import { ACCOUNT_TYPES, type Account } from "@/lib/types";
-import { cn } from "cn";
-
-const WEEKS = 26;
-const LEVELS = ["bg-muted", "bg-expense/25", "bg-expense/50", "bg-expense/75", "bg-expense"];
-
-const addDays = (day: string, n: number) => {
-  const d = new Date(`${day}T00:00:00`);
-  d.setDate(d.getDate() + n);
-  return iso(d);
-};
-
-// GitHub-style grid of spending per day, up to the month picked. Fijos are left out of the grid
-// (they're planned); shades go by quartile so rent day doesn't wash out the rest. Weeks start on
-// Monday, and narrow screens clip the oldest ones.
-// ponytail: only the transactions the store loaded (newest 500); older days read as empty.
-function SpendingCard({ month }: { month: string }) {
-  const store = useStore();
-  const monthEnd = addDays(`${shiftMonth(month, 1)}-01`, -1);
-  const end = monthEnd < store.today ? monthEnd : store.today;
-  const monday = addDays(end, -((new Date(`${end}T00:00:00`).getDay() + 6) % 7));
-  const days = Array.from({ length: WEEKS * 7 }, (_, i) => addDays(monday, i - (WEEKS - 1) * 7));
-
-  const byDay = new Map<string, number>();
-  let variable = 0;
-  let fijos = 0;
-  for (const t of store.transactions) {
-    if (t.kind !== "expense") continue;
-    if (t.recurring_id) {
-      if (t.occurred_on.startsWith(month)) fijos += t.amount;
-      continue;
-    }
-    if (t.occurred_on.startsWith(month)) variable += t.amount;
-    byDay.set(t.occurred_on, (byDay.get(t.occurred_on) ?? 0) + t.amount);
-  }
-  const spent = days
-    .filter((d) => d <= end)
-    .map((d) => byDay.get(d) ?? 0)
-    .filter(Boolean)
-    .sort((a, b) => a - b);
-  const quartiles = [0.25, 0.5, 0.75].map((p) => spent[Math.floor(p * (spent.length - 1))]);
-  const level = (v: number) => (v > 0 ? 1 + quartiles.filter((q) => v > q).length : 0);
-  const free = days.filter((d) => d.startsWith(month) && d <= end && !byDay.has(d)).length;
-
-  return (
-    <Card className="gap-3">
-      <CardHeader className="flex items-center justify-between gap-3">
-        <CardTitle>Gasto diario</CardTitle>
-        <span className="truncate text-xs text-muted-foreground tabular-nums">
-          Variable {store.money(variable)} · Fijos {store.money(fijos)}
-        </span>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <div
-          role="img"
-          aria-label={`Gasto variable por día, últimas ${WEEKS} semanas`}
-          className="flex justify-end overflow-hidden"
-        >
-          {/* Cells grow to fill the card; once they'd go under 10px, justify-end clips the left. */}
-          <div
-            className="grid w-full min-w-max shrink-0 grid-flow-col grid-rows-7 gap-[3px]"
-            style={{ gridTemplateColumns: `repeat(${WEEKS}, minmax(10px, 1fr))` }}
-          >
-            {days.map((d) => (
-              <span
-                key={d}
-                title={d <= end ? `${dayMonth(d)} · ${store.money(byDay.get(d) ?? 0)}` : undefined}
-                className={cn(
-                  "aspect-square rounded-[3px]",
-                  d > end ? "invisible" : LEVELS[level(byDay.get(d) ?? 0)],
-                  !d.startsWith(month) && "opacity-40",
-                )}
-              />
-            ))}
-          </div>
-        </div>
-        <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-          <span>
-            {free} {free === 1 ? "día" : "días"} sin gastos en{" "}
-            {monthName(month, false).toLowerCase()}
-          </span>
-          <span className="flex items-center gap-[3px]" aria-hidden>
-            Menos
-            {LEVELS.map((c) => (
-              <span key={c} className={cn("size-2.5 rounded-[2px]", c)} />
-            ))}
-            Más
-          </span>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 // "+3.2% vs septiembre"; for spending, going down is the good direction.
 function Delta({
@@ -344,7 +254,8 @@ export default function Home() {
           </CardContent>
         </Card>
         <Card className="max-[359px]:col-span-2">
-          <CardContent>
+          {/* The month's days sit beside the amount when there's room, below it when not. */}
+          <CardContent className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
             <Stat label="Gastos del mes">
               <Amount
                 value={now.expense}
@@ -358,6 +269,11 @@ export default function Home() {
                 lowerIsBetter
               />
             </Stat>
+            <SpendingGrid
+              from={`${month}-01`}
+              to={addDays(`${shiftMonth(month, 1)}-01`, -1)}
+              label={`Gasto variable por día en ${monthName(month, false).toLowerCase()}`}
+            />
           </CardContent>
         </Card>
         <Card className="col-span-2 md:col-span-1">
@@ -388,32 +304,29 @@ export default function Home() {
       </div>
 
       <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-4">
-          <SpendingCard month={month} />
-          <Card className="gap-1 pb-1">
-            <CardHeader className="flex items-center justify-between">
-              <CardTitle>Movimientos recientes</CardTitle>
-              <MoreLink href="/transactions">Ver todos</MoreLink>
-            </CardHeader>
-            <TransactionRows
-              transactions={monthTxs.slice(0, 7)}
-              grouped={false}
-              empty={
-                store.transactions.length ? (
-                  `Sin movimientos en ${monthName(month, false).toLowerCase()}.`
-                ) : (
-                  <EmptyState
-                    icon={ReceiptTextIcon}
-                    title="Aún no hay movimientos"
-                    action={<NewTransactionButton />}
-                  >
-                    Registra tu primer gasto o ingreso para ver tu resumen del mes.
-                  </EmptyState>
-                )
-              }
-            />
-          </Card>
-        </div>
+        <Card className="gap-1 pb-1">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle>Movimientos recientes</CardTitle>
+            <MoreLink href="/transactions">Ver todos</MoreLink>
+          </CardHeader>
+          <TransactionRows
+            transactions={monthTxs.slice(0, 7)}
+            grouped={false}
+            empty={
+              store.transactions.length ? (
+                `Sin movimientos en ${monthName(month, false).toLowerCase()}.`
+              ) : (
+                <EmptyState
+                  icon={ReceiptTextIcon}
+                  title="Aún no hay movimientos"
+                  action={<NewTransactionButton />}
+                >
+                  Registra tu primer gasto o ingreso para ver tu resumen del mes.
+                </EmptyState>
+              )
+            }
+          />
+        </Card>
         <div className="flex flex-col gap-4">
           <Card>
             <CardHeader className="flex items-center justify-between">
