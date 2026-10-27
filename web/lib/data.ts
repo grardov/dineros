@@ -29,7 +29,7 @@ const toNumbers = <T, K extends keyof T>(row: Wire<T, K>, keys: K[]) =>
 // Shared by the layout's data and its user menu within a request.
 export const getProfile = cache(() => api<Profile>("/profile/"));
 
-type Daily = { day: string; amount: number };
+type Daily = { day: string; amount: number; count: number };
 
 type Balance = { account_id: string; balance: number; available_credit: number | null };
 
@@ -80,7 +80,9 @@ export async function loadData() {
     occurrences: occurrences.map((o) =>
       toNumbers(o, ["expected_amount", "paid_amount", "fijo_charges"]),
     ), // by due date
-    daily: Object.fromEntries(daily.map((d) => [d.day, Number(d.amount)])),
+    daily: Object.fromEntries(
+      daily.map((d) => [d.day, { amount: Number(d.amount), count: d.count }]),
+    ),
     balances: Object.fromEntries(
       balances.map((b) => [b.account_id, toNumbers(b, ["balance", "available_credit"])]),
     ),

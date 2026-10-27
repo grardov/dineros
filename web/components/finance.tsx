@@ -11,6 +11,7 @@ import {
   TrendingUpIcon,
 } from "lucide-react";
 
+import { Tooltip } from "@base-ui/react/tooltip";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -218,9 +219,12 @@ export const SPENDING_LEVELS = [
   "bg-expense",
 ];
 
+const WEEKDAYS = ["", "lun", "", "mié", "", "vie", "", ""]; // a blank over the month labels
+
 // GitHub-style grid of spending per day from `from` to `to`: a column per week (Monday first),
 // shaded by quartile so rent day doesn't wash out the rest. Days still to come stay faint.
-// `months` labels the columns where a month starts, for the yearly view.
+// Hovering, tapping or arrowing through a day shows its date, total and count; `months` labels
+// the months and weekdays, for the yearly view.
 export function SpendingGrid({
   from,
   to,
@@ -233,6 +237,10 @@ export function SpendingGrid({
   label: string;
 }) {
   const store = useStore();
+  const grid = useRef<HTMLDivElement>(null);
+  // The day shown and its cell, which the label floats over.
+  const [picked, setPicked] = useState<{ day: string; cell: Element } | null>(null);
+  const active = picked?.day ?? null;
   const start = addDays(from, -((new Date(`${from}T00:00:00`).getDay() + 6) % 7));
   const weeks = Math.ceil((daysUntil(start, to) + 1) / 7);
   const last = to < store.today ? to : store.today;
@@ -244,43 +252,111 @@ export function SpendingGrid({
   const quartiles = [0.25, 0.5, 0.75].map((p) => spent[Math.floor(p * (spent.length - 1))]);
   const level = (v: number) => (v > 0 ? 1 + quartiles.filter((q) => v > q).length : 0);
 
+  const pickable = (d: string | undefined): d is string => !!d && d >= from && d <= last;
+  const dayAt = (e: React.SyntheticEvent) => (e.target as HTMLElement).dataset.day;
+  // Up and down are days, left and right are weeks, like the grid.
+  const keys: Record<string, number> = { ArrowUp: -1, ArrowDown: 1, ArrowLeft: -7, ArrowRight: 7 };
+  const setActive = (d: string | null) => {
+    if (d === active) return;
+    const cell = d && grid.current?.querySelector(`[data-day="${d}"]`);
+    setPicked(cell ? { day: d, cell } : null);
+  };
+  useEffect(() => {
+    picked?.cell.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [picked]);
+
+  const count = active ? store.expensesOn(active) : 0;
+  const date =
+    active &&
+    capitalize(
+      new Date(`${active}T00:00:00`).toLocaleDateString("es-MX", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+    );
+  const detail = count
+    ? `${store.money(store.spentOn(active!))} en ${count} ${count === 1 ? "gasto" : "gastos"}`
+    : "Sin gastos";
+
   return (
-    <div
-      role="img"
-      aria-label={label}
-      className={cn(
-        "grid w-max grid-flow-col auto-cols-[9px] gap-[2px]",
-        months ? "grid-rows-[auto_repeat(7,9px)]" : "grid-rows-[repeat(7,9px)]",
-      )}
-    >
-      {Array.from({ length: weeks }, (_, w) => {
-        const days = Array.from({ length: 7 }, (_, i) => addDays(start, w * 7 + i));
-        const first = days.find((d) => d.endsWith("-01") && d >= from && d <= to);
-        return [
-          months && (
-            <span key={w} className="pb-0.5 text-[0.6875rem] whitespace-nowrap text-subtle">
-              {first && monthName(first, false).slice(0, 3).toLowerCase()}
+    <>
+      <div
+        ref={grid}
+        role="group"
+        aria-label={`${label}. Usa las flechas para recorrer los días.`}
+        tabIndex={0}
+        className={cn(
+          "grid w-max cursor-default grid-flow-col auto-cols-[9px] gap-[2px] rounded-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2",
+          months ? "grid-cols-[auto] grid-rows-[auto_repeat(7,9px)]" : "grid-rows-[repeat(7,9px)]",
+        )}
+        onPointerMove={(e) => {
+          if (e.pointerType === "mouse" && pickable(dayAt(e))) setActive(dayAt(e)!);
+        }}
+        onPointerLeave={(e) => e.pointerType === "mouse" && setActive(null)}
+        onPointerDown={(e) => {
+          // Mice show days on hover; a tap shows one and a second tap hides it.
+          const d = dayAt(e);
+          if (e.pointerType !== "mouse" && pickable(d)) setActive(d === active ? null : d);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") return setActive(null);
+          if (!(e.key in keys)) return;
+          e.preventDefault();
+          const next = addDays(active ?? last, active ? keys[e.key] : 0);
+          if (pickable(next)) setActive(next);
+        }}
+        onBlur={() => setActive(null)}
+      >
+        {months &&
+          WEEKDAYS.map((d, i) => (
+            <span key={`wd${i}`} className="pr-1 text-[0.6875rem] leading-[9px] text-subtle">
+              {d}
             </span>
-          ),
-          ...days.map((d) => (
-            <span
-              key={d}
-              title={
-                d <= store.today ? `${dayMonth(d)} · ${store.money(store.spentOn(d))}` : undefined
-              }
-              className={cn(
-                "rounded-[2px]",
-                d < from || d > to
-                  ? "invisible"
-                  : d > store.today
-                    ? "bg-muted/50"
-                    : SPENDING_LEVELS[level(store.spentOn(d))],
-              )}
-            />
-          )),
-        ];
-      })}
-    </div>
+          ))}
+        {Array.from({ length: weeks }, (_, w) => {
+          const days = Array.from({ length: 7 }, (_, i) => addDays(start, w * 7 + i));
+          const first = days.find((d) => d.endsWith("-01") && d >= from && d <= to);
+          return [
+            months && (
+              <span key={w} className="pb-0.5 text-[0.6875rem] whitespace-nowrap text-subtle">
+                {first && monthName(first, false).slice(0, 3).toLowerCase()}
+              </span>
+            ),
+            ...days.map((d) => (
+              <span
+                key={d}
+                data-day={d}
+                className={cn(
+                  "rounded-[2px]",
+                  d < from || d > to
+                    ? "invisible"
+                    : d > store.today
+                      ? "bg-muted/50"
+                      : SPENDING_LEVELS[level(store.spentOn(d))],
+                  d === active && "ring-1 ring-foreground ring-offset-1 ring-offset-card",
+                )}
+              />
+            )),
+          ];
+        })}
+      </div>
+      <span className="sr-only" aria-live="polite">
+        {date && `${date}: ${detail}`}
+      </span>
+      {/* One label for the whole grid, floated over the day picked. */}
+      <Tooltip.Root open={!!active} onOpenChange={(open) => !open && setActive(null)}>
+        <Tooltip.Portal>
+          <Tooltip.Positioner anchor={picked?.cell} side="top" sideOffset={6} className="z-50">
+            <Tooltip.Popup className="pointer-events-none flex data-closed:hidden flex-col rounded-md bg-foreground px-2.5 py-1.5 text-xs text-background shadow-md">
+              <span className="font-medium">{date}</span>
+              <span className="tabular-nums opacity-80">{detail}</span>
+            </Tooltip.Popup>
+          </Tooltip.Positioner>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </>
   );
 }
 

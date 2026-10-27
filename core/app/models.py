@@ -103,6 +103,7 @@ class Transaction(TransactionCreate, table=True):
 class DailySpending(SQLModel):
     day: date
     amount: Decimal
+    count: int
 
 
 class RecurringCreate(SQLModel):

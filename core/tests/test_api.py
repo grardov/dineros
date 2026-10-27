@@ -399,6 +399,6 @@ def test_daily_spending(client, new_user) -> None:
 
     r = client.get(f"/transactions/daily/?since={since}", headers=h)
     assert r.json() == [
-        {"day": str(since), "amount": "20.00"},
-        {"day": str(today), "amount": "150.50"},
+        {"day": str(since), "amount": "20.00", "count": 1},
+        {"day": str(today), "amount": "150.50", "count": 2},
     ]

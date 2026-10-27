@@ -30,7 +30,7 @@ def list_transactions(
 def daily_spending(session: SessionDep, since: date) -> list[DailySpending]:
     """Spending per day from `since` on, for the heatmaps. Fijos are left out: they're planned."""
     query = (
-        select(Transaction.occurred_on, func.sum(Transaction.amount))
+        select(Transaction.occurred_on, func.sum(Transaction.amount), func.count())
         .where(
             Transaction.kind == "expense",
             Transaction.recurring_id.is_(None),
@@ -39,7 +39,10 @@ def daily_spending(session: SessionDep, since: date) -> list[DailySpending]:
         .group_by(Transaction.occurred_on)
         .order_by(Transaction.occurred_on)
     )
-    return [DailySpending(day=day, amount=amount) for day, amount in session.exec(query)]
+    return [
+        DailySpending(day=day, amount=amount, count=count)
+        for day, amount, count in session.exec(query)
+    ]
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
