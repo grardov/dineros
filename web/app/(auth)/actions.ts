@@ -32,7 +32,12 @@ export async function authenticate(_prev: AuthState, formData: FormData): Promis
   const supabase = await createClient();
 
   if (intent === "signup") {
-    const { data, error } = await supabase.auth.signUp(credentials);
+    // The confirmation link would otherwise land on the Site URL, which is now the landing page.
+    const origin = (await headers()).get("origin");
+    const { data, error } = await supabase.auth.signUp({
+      ...credentials,
+      options: { emailRedirectTo: `${origin}/login` },
+    });
     if (error) {
       return {
         email: credentials.email,
