@@ -11,7 +11,7 @@ import {
   SmartphoneIcon,
   WalletIcon,
 } from "lucide-react";
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import { cn } from "cn";
 import Link from "next/link";
 
@@ -22,10 +22,46 @@ import { money } from "@/lib/types";
 
 import { FijosDemo } from "./fijos-demo";
 
+const TITLE = "Dineros · Tus cuentas, tarjetas y fijos en un solo lugar";
+const DESCRIPTION =
+  "Dineros es una app gratis de finanzas personales para México: registra tus gastos e ingresos, controla tus tarjetas de crédito y planea tus gastos fijos.";
+// The production domain on Vercel, so the canonical URL and JSON-LD never point at a preview.
+const SITE = new URL(
+  process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "http://localhost:3000",
+);
+
 // Signed-in visitors never see this page: the proxy sends them to /dashboard.
-export const metadata: Metadata = {
-  title: { absolute: "Dineros · Tus cuentas, tarjetas y fijos en un solo lugar" },
-  robots: { index: true, follow: true },
+// openGraph and twitter replace the root layout's whole objects, share image included,
+// so they build on the resolved parent instead.
+export async function generateMetadata(
+  _: PageProps<"/">,
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
+  const { openGraph, twitter } = await parent;
+  return {
+    metadataBase: SITE,
+    title: { absolute: TITLE },
+    description: DESCRIPTION,
+    alternates: { canonical: "/" },
+    robots: { index: true, follow: true },
+    openGraph: { ...openGraph, type: "website", url: "/", title: TITLE, description: DESCRIPTION },
+    twitter: { ...twitter, title: TITLE, description: DESCRIPTION },
+  };
+}
+
+// Tells search engines what Dineros is: a free web app for personal finances.
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "Dineros",
+  url: SITE.href,
+  description: DESCRIPTION,
+  applicationCategory: "FinanceApplication",
+  operatingSystem: "Web",
+  inLanguage: "es-MX",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "MXN" },
 };
 
 const SIGNUP = "/login?mode=signup";
@@ -109,6 +145,12 @@ function HeroStat({ label, children }: { label: string; children: React.ReactNod
 export default function LandingPage() {
   return (
     <div className="flex flex-1 flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c"),
+        }}
+      />
       <header className="sticky top-0 z-10 border-b bg-background/85 backdrop-blur-md">
         <div className={`${container} flex items-center gap-6 py-3.5`}>
           <Logo />
