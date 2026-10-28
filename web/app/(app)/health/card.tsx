@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 
-import { shiftMonth } from "@/components/finance";
-import { Badge } from "@/components/ui/badge";
+import { Stat, shiftMonth } from "@/components/finance";
 import { Card, CardContent } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
 import type { Transaction } from "@/lib/types";
@@ -17,8 +16,10 @@ const TEXT: Record<Tone, string> = {
   bad: "text-expense",
 };
 
-// The month against the user's rule, for the dashboard. A closed month is measured against what
-// came in; the one in progress against what usually comes in, since the pay may not be in yet.
+// The month against the user's rule, for the dashboard, laid out like the other figures: how many
+// goals it meets, and income split into one bar like a phone's storage. A closed month is measured
+// against what came in; the one in progress against what usually comes in, since the pay may not
+// be in yet.
 export function HealthCard({ month }: { month: string }) {
   const store = useStore();
   const { profile } = store;
@@ -43,102 +44,114 @@ export function HealthCard({ month }: { month: string }) {
   };
 
   const now = of(month);
-  const current = month === thisMonth;
   const pastIncome = [1, 2, 3].map((i) => of(shiftMonth(thisMonth, -i)).income).filter(Boolean);
   const typicalIncome = pastIncome.length
     ? pastIncome.reduce((s, n) => s + n, 0) / pastIncome.length
     : 0;
-  const base = current ? Math.max(now.income, typicalIncome) : now.income;
-  // What's left to spend before it eats into the savings goal.
-  const room = base * (1 - profile.savings_pct / 100) - now.spent;
+  const base = month === thisMonth ? Math.max(now.income, typicalIncome) : now.income;
+  const saved = base - now.spent;
 
-  const rows = [
-    {
-      label: "Necesidades",
-      color: "bg-needs",
-      share: pct(now.needs, base),
-      goal: profile.needs_pct,
-      tone: atMost(pct(now.needs, base), profile.needs_pct),
-    },
-    {
-      label: "Deseos",
-      color: "bg-wants",
-      share: pct(now.wants, base),
-      goal: profile.wants_pct,
-      tone: atMost(pct(now.wants, base), profile.wants_pct),
-    },
-    {
-      label: "Ahorro",
-      color: "bg-savings",
-      share: pct(base - now.spent, base),
-      goal: profile.savings_pct,
-      tone: atLeast(pct(base - now.spent, base), profile.savings_pct),
-    },
-  ];
-  const onTrack = rows.filter((r) => r.tone === "good").length;
+  // How far each share is from its goal (positive: missed it), worst first.
+  const goals = [
+    { label: "Necesidades", share: pct(now.needs, base), goal: profile.needs_pct, max: true },
+    { label: "Deseos", share: pct(now.wants, base), goal: profile.wants_pct, max: true },
+    { label: "Ahorro", share: pct(saved, base), goal: profile.savings_pct, max: false },
+  ]
+    .map((g) => ({
+      ...g,
+      tone: (g.max ? atMost : atLeast)(g.share, g.goal),
+      miss: g.max ? g.share - g.goal : g.goal - g.share,
+    }))
+    .sort((a, b) => b.miss - a.miss);
+  const met = goals.filter((g) => g.tone === "good").length;
+  const worst = goals[0];
+
+  const whole = Math.max(base, now.spent);
+  const segments = [
+    ["Necesidades", now.needs, "bg-needs"],
+    ["Deseos", now.wants, "bg-wants"],
+    ["Sin clasificar", now.spent - now.needs - now.wants, "bg-chart-4"],
+    ["Ahorro", Math.max(saved, 0), "bg-savings"],
+  ] as const;
+
+  const active = profile.health_started_at && base > 0;
 
   return (
     <Card className="relative transition-colors hover:bg-sidebar">
-      <CardContent className="flex flex-col gap-2.5">
-        <div className="flex items-center justify-between gap-2">
-          <Link
-            href="/health"
-            className="text-[0.8125rem] text-muted-foreground after:absolute after:inset-0"
+      <CardContent>
+        <Stat
+          label={
+            <Link href="/health" className="after:absolute after:inset-0">
+              Tu regla
+              {profile.health_started_at &&
+                ` · ${profile.needs_pct}/${profile.wants_pct}/${profile.savings_pct}`}
+            </Link>
+          }
+        >
+          <span
+            className={cn(
+              "text-xl leading-none font-semibold tracking-tight whitespace-nowrap tabular-nums md:text-[26px]",
+              !active && "text-subtle",
+            )}
           >
-            {profile.health_started_at ? "Tu regla" : "Salud financiera"}
-          </Link>
-          {profile.health_started_at && base > 0 && (
-            <Badge variant={onTrack === 3 ? "income" : onTrack === 2 ? "warning" : "expense"}>
-              {onTrack} de 3 en meta
-            </Badge>
-          )}
-        </div>
-
-        {!profile.health_started_at ? (
-          <>
-            <p className="text-sm text-pretty">
-              Mide cada mes contra tu propia regla, como la 50/30/20.
-            </p>
-            <span className="text-[0.8125rem] font-medium text-primary">Activar →</span>
-          </>
-        ) : !base ? (
-          <p className="text-sm text-muted-foreground">
-            Registra tus ingresos para medir tu regla.
-          </p>
-        ) : (
-          <>
-            {rows.map((r) => (
-              <div key={r.label} className="flex flex-col gap-1">
-                <div className="flex items-center gap-1.5 text-xs">
-                  <span className={cn("size-2 shrink-0 rounded-full", r.color)} />
-                  <span className="font-medium">{r.label}</span>
-                  <span className={cn("ml-auto font-semibold tabular-nums", TEXT[r.tone])}>
-                    {Math.round(r.share)}%
-                  </span>
-                  <span className="text-subtle tabular-nums">/ {r.goal}%</span>
-                </div>
-                <div className="relative h-1.5 rounded-full bg-muted">
-                  <div
-                    className={cn("h-full rounded-full", r.color)}
-                    style={{ width: `${Math.min(Math.max(r.share, 0), 100)}%` }}
-                  />
+            {!profile.health_started_at ? (
+              "Sin activar"
+            ) : active ? (
+              <>
+                {met} de 3{" "}
+                <span className="text-sm font-medium tracking-normal text-muted-foreground">
+                  en meta
+                </span>
+              </>
+            ) : (
+              "—"
+            )}
+          </span>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+            <div
+              role={active ? "img" : undefined}
+              aria-label={
+                active
+                  ? segments.map(([label, v]) => `${label} ${Math.round(pct(v, base))}%`).join(", ")
+                  : undefined
+              }
+              className="flex h-[5px] min-w-16 flex-1 gap-0.5 overflow-hidden rounded-full bg-secondary"
+            >
+              {active &&
+                segments.map(([label, v, color]) => (
                   <span
-                    aria-hidden
-                    className="absolute -top-0.5 -bottom-0.5 w-0.5 rounded-full bg-foreground"
-                    style={{ left: `${r.goal}%` }}
+                    key={label}
+                    title={`${label}: ${Math.round(pct(v, base))}%`}
+                    className={color}
+                    style={{ width: `${pct(v, whole)}%` }}
                   />
-                </div>
-              </div>
-            ))}
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {!current
-                ? `De ${store.money(base)} de ingresos`
-                : room >= 0
-                  ? `Te quedan ${store.money(room)} sin tocar tu ahorro`
-                  : `Ya gastaste ${store.money(-room)} de tu ahorro`}
+                ))}
+            </div>
+            <span
+              title={
+                active && worst.tone !== "good"
+                  ? `${worst.label}: ${Math.round(worst.share)}% de tus ingresos, meta ${worst.goal}%`
+                  : undefined
+              }
+              className={cn(
+                "text-xs whitespace-nowrap tabular-nums",
+                !profile.health_started_at
+                  ? "font-medium text-primary"
+                  : active
+                    ? TEXT[worst.tone]
+                    : "text-muted-foreground",
+              )}
+            >
+              {!profile.health_started_at
+                ? "Actívala →"
+                : !active
+                  ? "Sin ingresos"
+                  : worst.tone === "good"
+                    ? "Todo en meta"
+                    : `${worst.label} ${Math.round(worst.share)}%`}
             </span>
-          </>
-        )}
+          </div>
+        </Stat>
       </CardContent>
     </Card>
   );
