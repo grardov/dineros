@@ -90,7 +90,7 @@ export function HealthCard({ month }: { month: string }) {
         >
           <span
             className={cn(
-              "text-xl leading-none font-semibold tracking-tight whitespace-nowrap tabular-nums md:text-[26px]",
+              "truncate text-xl leading-none font-semibold tracking-tight tabular-nums md:text-[26px]",
               !active && "text-subtle",
             )}
           >
@@ -107,7 +107,7 @@ export function HealthCard({ month }: { month: string }) {
               "—"
             )}
           </span>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+          <div className="flex items-center gap-2">
             <div
               role={active ? "img" : undefined}
               aria-label={
@@ -115,7 +115,7 @@ export function HealthCard({ month }: { month: string }) {
                   ? segments.map(([label, v]) => `${label} ${Math.round(pct(v, base))}%`).join(", ")
                   : undefined
               }
-              className="flex h-[5px] min-w-16 flex-1 gap-0.5 overflow-hidden rounded-full bg-secondary"
+              className="flex h-[5px] min-w-12 flex-1 gap-0.5 overflow-hidden rounded-full bg-secondary"
             >
               {active &&
                 segments.map(([label, v, color]) => (
@@ -134,7 +134,7 @@ export function HealthCard({ month }: { month: string }) {
                   : undefined
               }
               className={cn(
-                "text-xs whitespace-nowrap tabular-nums",
+                "min-w-0 truncate text-xs tabular-nums",
                 !profile.health_started_at
                   ? "font-medium text-primary"
                   : active

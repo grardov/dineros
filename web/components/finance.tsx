@@ -437,7 +437,7 @@ export function Stat({
 }) {
   return (
     <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
-      <span className="text-[0.8125rem] text-muted-foreground">{label}</span>
+      <span className="truncate text-[0.8125rem] text-muted-foreground">{label}</span>
       {children}
     </div>
   );

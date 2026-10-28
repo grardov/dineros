@@ -52,11 +52,12 @@ function Delta({
   label: string;
   lowerIsBetter?: boolean;
 }) {
-  if (!before) return <span className="text-xs text-muted-foreground">Sin datos de {label}</span>;
+  if (!before)
+    return <span className="truncate text-xs text-muted-foreground">Sin datos de {label}</span>;
   const pct = ((now - before) / before) * 100;
   const good = lowerIsBetter ? pct <= 0 : pct >= 0;
   return (
-    <span className={`text-xs font-medium ${good ? "text-income" : "text-expense"}`}>
+    <span className={`truncate text-xs font-medium ${good ? "text-income" : "text-expense"}`}>
       {pct >= 0 ? "+" : "−"}
       {Math.abs(pct).toFixed(1)}% vs {label}
     </span>
@@ -220,9 +221,9 @@ export default function Home() {
         <NewTransactionButton className="max-md:hidden" />
       </PageHeader>
 
-      {/* Gastos del mes gets the extra width: its amount shares the row with the month's days. On
-          phones each figure takes a row, so that fits there too. */}
-      <div className="stagger grid grid-cols-1 gap-3 md:grid-cols-[1.35fr_1fr] md:gap-4 xl:grid-cols-[1fr_1fr_1.3fr_1fr]">
+      {/* Every figure gets the same width, four in a row only where Gastos del mes has room for
+          its amount and the month's days side by side. Text that doesn't fit is cut short. */}
+      <div className="stagger grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 2xl:grid-cols-4">
         <Card className="max-md:border-0 max-md:bg-primary max-md:text-primary-foreground">
           <CardContent>
             <Stat
@@ -234,7 +235,7 @@ export default function Home() {
                 centsClassName="text-subtle max-md:text-primary-foreground/60"
                 deltaClassName="max-md:text-primary-foreground"
               />
-              <span className="text-xs text-muted-foreground max-md:text-primary-foreground/80">
+              <span className="truncate text-xs text-muted-foreground max-md:text-primary-foreground/80">
                 Activos {store.money(assets)} · Deudas {store.signedMoney(debts, "MXN", false)}
               </span>
             </Stat>
@@ -242,8 +243,8 @@ export default function Home() {
         </Card>
         <HealthCard month={month} />
         <Card>
-          {/* The month's days sit beside the amount when there's room, below it when not. */}
-          <CardContent className="flex flex-wrap items-end justify-between gap-x-3 gap-y-3">
+          {/* The month's days sit beside the amount, and step aside when there's no room for both. */}
+          <CardContent className="@container flex items-end justify-between gap-3">
             <Stat label="Gastos del mes">
               <Amount
                 value={now.expense}
@@ -257,19 +258,21 @@ export default function Home() {
                 lowerIsBetter
               />
             </Stat>
-            <SpendingGrid
-              from={`${month}-01`}
-              to={addDays(`${shiftMonth(month, 1)}-01`, -1)}
-              label={`Gasto variable por día en ${monthName(month, false).toLowerCase()}`}
-            />
+            <div className="hidden shrink-0 @min-[13.5rem]:block">
+              <SpendingGrid
+                from={`${month}-01`}
+                to={addDays(`${shiftMonth(month, 1)}-01`, -1)}
+                label={`Gasto variable por día en ${monthName(month, false).toLowerCase()}`}
+              />
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent>
             <Stat label="Ahorro del mes">
               <Amount value={saved} className="text-xl leading-none md:text-[26px]" />
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                <div className="h-[5px] min-w-16 flex-1 overflow-hidden rounded-full bg-secondary">
+              <div className="flex items-center gap-2">
+                <div className="h-[5px] min-w-12 flex-1 overflow-hidden rounded-full bg-secondary">
                   <div
                     className="h-full bg-primary"
                     style={{
@@ -277,15 +280,17 @@ export default function Home() {
                     }}
                   />
                 </div>
-                <span className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+                <span className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground tabular-nums">
                   {saved >= 0 ? (
                     <TrendingUpIcon className="size-3.5" />
                   ) : (
                     <TrendingDownIcon className="size-3.5 text-expense" />
                   )}
-                  {now.income
-                    ? `${((saved / now.income) * 100).toFixed(1)}% de ${store.money(now.income)}`
-                    : "Sin ingresos"}
+                  <span className="truncate">
+                    {now.income
+                      ? `${((saved / now.income) * 100).toFixed(1)}% de ${store.money(now.income)}`
+                      : "Sin ingresos"}
+                  </span>
                 </span>
               </div>
             </Stat>
