@@ -36,8 +36,9 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Static and metadata files must reach crawlers and the install prompt without a session.
+  // Static and metadata files must reach crawlers and the install prompt without a session, and
+  // Vercel Analytics (/_vercel/insights) must load on signed-out pages too.
   matcher: [
-    "/((?!_next/static|_next/image|icon.svg|apple-icon.png|opengraph-image.png|manifest.webmanifest|robots.txt|institutions/|version$).*)",
+    "/((?!_next/static|_next/image|_vercel/|icon.svg|apple-icon.png|opengraph-image.png|manifest.webmanifest|robots.txt|institutions/|version$).*)",
   ],
 };
