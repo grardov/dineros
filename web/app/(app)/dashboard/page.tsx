@@ -38,6 +38,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
 import { ACCOUNT_TYPES, type Account } from "@/lib/types";
 
+import { HealthCard } from "../health/card";
+
 // "+3.2% vs septiembre"; for spending, going down is the good direction.
 function Delta({
   now,
@@ -238,22 +240,7 @@ export default function Home() {
             </Stat>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent>
-            <Stat label="Ingresos del mes">
-              <Amount
-                value={now.income}
-                className="text-lg leading-none text-income sm:text-xl md:text-[26px]"
-                centsClassName="opacity-55"
-              />
-              <Delta
-                now={now.income}
-                before={before.income}
-                label={monthName(prev, false).toLowerCase()}
-              />
-            </Stat>
-          </CardContent>
-        </Card>
+        <HealthCard month={month} />
         <Card>
           {/* The month's days sit beside the amount when there's room, below it when not. */}
           <CardContent className="flex flex-wrap items-end justify-between gap-x-3 gap-y-3">
@@ -281,8 +268,8 @@ export default function Home() {
           <CardContent>
             <Stat label="Ahorro del mes">
               <Amount value={saved} className="text-xl leading-none md:text-[26px]" />
-              <div className="flex items-center gap-2">
-                <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-secondary">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                <div className="h-[5px] min-w-16 flex-1 overflow-hidden rounded-full bg-secondary">
                   <div
                     className="h-full bg-primary"
                     style={{
@@ -296,7 +283,9 @@ export default function Home() {
                   ) : (
                     <TrendingDownIcon className="size-3.5 text-expense" />
                   )}
-                  {now.income ? `${((saved / now.income) * 100).toFixed(1)}% de ingresos` : "—"}
+                  {now.income
+                    ? `${((saved / now.income) * 100).toFixed(1)}% de ${store.money(now.income)}`
+                    : "Sin ingresos"}
                 </span>
               </div>
             </Stat>

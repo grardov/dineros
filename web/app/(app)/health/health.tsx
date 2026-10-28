@@ -20,19 +20,19 @@ import { SavingsCalculator } from "./calculator";
 import { RuleDialog } from "./rule-dialog";
 import { HealthSetup } from "./setup";
 
-type Tone = "good" | "warn" | "bad";
+export type Tone = "good" | "warn" | "bad";
 const TONES: Record<Tone, { label: string; badge: "income" | "warning" | "expense" }> = {
   good: { label: "Bien", badge: "income" },
   warn: { label: "Cerca", badge: "warning" },
   bad: { label: "Revisa", badge: "expense" },
 };
 // Within 5 points of the goal is "close".
-const atMost = (v: number, max: number): Tone =>
+export const atMost = (v: number, max: number): Tone =>
   v <= max ? "good" : v <= max + 5 ? "warn" : "bad";
-const atLeast = (v: number, min: number): Tone =>
+export const atLeast = (v: number, min: number): Tone =>
   v >= min ? "good" : v >= min - 5 ? "warn" : "bad";
 
-const pct = (part: number, whole: number) => (whole ? (part / whole) * 100 : 0);
+export const pct = (part: number, whole: number) => (whole ? (part / whole) * 100 : 0);
 
 function Status({ tone }: { tone: Tone | null }) {
   if (!tone) return null;
