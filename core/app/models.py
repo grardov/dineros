@@ -116,6 +116,12 @@ class MonthlyTotal(SQLModel):
     amount: Decimal
 
 
+class DailySpending(SQLModel):
+    day: date
+    amount: Decimal
+    count: int
+
+
 class RecurringCreate(SQLModel):
     """A "fijo": recurring income, expense or transfer. amount is None only for a credit card
     payment, which takes the statement due that month."""

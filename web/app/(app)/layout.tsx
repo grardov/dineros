@@ -60,9 +60,9 @@ function PageSkeleton() {
         <Skeleton className="h-3.5 w-24" />
         <Skeleton className="h-8 w-48" />
       </div>
-      <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[1.35fr_1fr] md:gap-4 xl:grid-cols-[1fr_1fr_1.3fr_1fr]">
         {[0, 1, 2, 3].map((i) => (
-          <Card key={i} className={i === 0 || i === 3 ? "col-span-2 md:col-span-1" : ""}>
+          <Card key={i}>
             <CardContent className="flex flex-col gap-3">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-7 w-32" />

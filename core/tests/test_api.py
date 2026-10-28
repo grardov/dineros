@@ -414,3 +414,44 @@ def test_financial_health(client, new_user) -> None:
         ("expense", None): "150.00",
     }
     assert {t["month"] for t in r} == {str(month)}
+
+
+def test_daily_spending(client, new_user) -> None:
+    h = new_user()
+    debit = client.post("/accounts/", headers=h, json={"name": "Nómina", "type": "debit"}).json()
+    today, since = date.today(), date.today() - timedelta(days=30)
+    rent = client.post(
+        "/recurring/",
+        headers=h,
+        json={
+            "name": "Renta",
+            "kind": "expense",
+            "amount": "9000",
+            "account_id": debit["id"],
+            "day_of_month": 1,
+            "starts_on": str(since),
+        },
+    ).json()
+
+    def tx(kind: str, amount: str, on: date, **extra) -> None:
+        body = {"kind": kind, "amount": amount, "occurred_on": str(on), "account_id": debit["id"]}
+        assert client.post("/transactions/", headers=h, json=body | extra).status_code == 201
+
+    tx("expense", "100", today)
+    tx("expense", "50.5", today)
+    tx("expense", "20", since)
+    tx("expense", "999", since - timedelta(days=1))  # before the window
+    tx("income", "5000", today)
+    tx(
+        "expense",
+        "9000",
+        today,
+        recurring_id=rent["id"],
+        recurring_period=str(today.replace(day=1)),
+    )
+
+    r = client.get(f"/transactions/daily/?since={since}", headers=h)
+    assert r.json() == [
+        {"day": str(since), "amount": "20.00", "count": 1},
+        {"day": str(today), "amount": "150.50", "count": 2},
+    ]
