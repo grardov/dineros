@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
   PlusIcon,
   ReceiptTextIcon,
   TrendingDownIcon,
@@ -19,6 +17,7 @@ import {
   Amount,
   CountUpAmount,
   EmptyState,
+  MonthPicker,
   MoreLink,
   PageHeader,
   SpendingGrid,
@@ -198,26 +197,7 @@ export default function Home() {
   return (
     <>
       <PageHeader eyebrow={todayLong} title="Resumen">
-        <div className="flex h-9 items-center rounded-md border border-input bg-card px-1 text-sm font-medium">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Mes anterior"
-            onClick={() => setMonth(prev)}
-          >
-            <ChevronLeftIcon className="text-muted-foreground" />
-          </Button>
-          <span className="w-32 text-center">{monthName(month)}</span>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Mes siguiente"
-            disabled={month >= thisMonth}
-            onClick={() => setMonth(shiftMonth(month, 1))}
-          >
-            <ChevronRightIcon className="text-muted-foreground" />
-          </Button>
-        </div>
+        <MonthPicker month={month} onChange={setMonth} max={thisMonth} />
         <NewTransactionButton className="max-md:hidden" />
       </PageHeader>
 
