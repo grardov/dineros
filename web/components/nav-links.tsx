@@ -2,6 +2,7 @@
 
 import {
   ArrowLeftRightIcon,
+  CalculatorIcon,
   HeartPulseIcon,
   HouseIcon,
   PlusIcon,
@@ -18,7 +19,7 @@ type NavLink = {
   href: string;
   label: string;
   icon: typeof HouseIcon;
-  sub?: { href: string; label: string }[];
+  sub?: NavLink[];
 };
 
 const LINKS: NavLink[] = [
@@ -31,7 +32,7 @@ const LINKS: NavLink[] = [
     href: "/health",
     label: "Salud",
     icon: HeartPulseIcon,
-    sub: [{ href: "/health/calculator", label: "Calculadora" }],
+    sub: [{ href: "/health/calculator", label: "Calculadora", icon: CalculatorIcon }],
   },
 ];
 // The phone tab bar fits four around "+": Categorías is reached from Resumen, Salud from the
@@ -40,45 +41,48 @@ const MOBILE = LINKS.filter((l) => l.href !== "/categories" && l.href !== "/heal
 
 const isActive = (href: string, pathname: string) => pathname.startsWith(href);
 
-// Vertical list in the sidebar from md up.
+function NavItem({ href, label, icon: Icon, active }: NavLink & { active: boolean }) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={`flex h-9 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors hover:bg-sidebar-accent ${
+        active
+          ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
+          : "font-medium text-sidebar-foreground"
+      }`}
+    >
+      <Icon className={`size-4 shrink-0 ${active ? "text-primary" : "text-[#6b7480]"}`} />
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
+
+// Vertical list in the sidebar from md up. Sub-links hang from their parent's icon on a line that
+// curves into each one.
 export function NavLinks() {
   const pathname = usePathname();
   return (
     <nav className="flex flex-col gap-0.5">
-      {LINKS.map(({ href, label, icon: Icon, sub }) => {
-        // On a sub-page, the sub-link is the one marked.
-        const active = isActive(href, pathname) && !sub?.some((s) => isActive(s.href, pathname));
-        return (
-          <div key={href} className="flex flex-col gap-0.5">
-            <Link
-              href={href}
-              aria-current={active ? "page" : undefined}
-              className={`flex h-9 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors hover:bg-sidebar-accent ${
-                active
-                  ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
-                  : "font-medium text-sidebar-foreground"
-              }`}
+      {LINKS.map((link) => (
+        <div key={link.href} className="flex flex-col gap-0.5">
+          {/* On a sub-page, the sub-link is the one marked. */}
+          <NavItem
+            {...link}
+            active={
+              isActive(link.href, pathname) && !link.sub?.some((s) => isActive(s.href, pathname))
+            }
+          />
+          {link.sub?.map((s) => (
+            <div
+              key={s.href}
+              className="relative ml-[17px] pl-3.5 before:absolute before:-top-1 before:left-0 before:h-[calc(50%+4px)] before:w-3 before:rounded-bl-[7px] before:border-b before:border-l before:border-[#cfd4da] not-last:after:absolute not-last:after:inset-y-0 not-last:after:left-0 not-last:after:border-l not-last:after:border-[#cfd4da]"
             >
-              <Icon className={`size-4 ${active ? "text-primary" : "text-[#6b7480]"}`} />
-              {label}
-            </Link>
-            {sub && (
-              <div className="ml-[18px] flex flex-col gap-0.5 border-l border-sidebar-border pl-2.5">
-                {sub.map((s) => (
-                  <Link
-                    key={s.href}
-                    href={s.href}
-                    aria-current={isActive(s.href, pathname) ? "page" : undefined}
-                    className="flex h-8 items-center rounded-md px-2.5 text-[0.8125rem] font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-semibold aria-[current=page]:text-sidebar-accent-foreground"
-                  >
-                    {s.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
+              <NavItem {...s} active={isActive(s.href, pathname)} />
+            </div>
+          ))}
+        </div>
+      ))}
     </nav>
   );
 }
