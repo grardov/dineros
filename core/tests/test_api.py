@@ -363,6 +363,59 @@ def test_transfer_and_fiscal_data(client, new_user) -> None:
     assert client.put("/profile/", headers=h, json={"rfc": "nope"}).status_code == 422
 
 
+def test_financial_health(client, new_user) -> None:
+    h = new_user()
+    profile = client.get("/profile/", headers=h).json()
+    assert [profile[k] for k in ("needs_pct", "wants_pct", "savings_pct")] == [50, 30, 20]
+    assert profile["health_started_at"] is None
+    # The rule has to add up to 100.
+    bad = {"needs_pct": 60, "wants_pct": 30, "savings_pct": 20}
+    assert client.put("/profile/", headers=h, json=bad).status_code == 409
+    rule = {"needs_pct": 60, "wants_pct": 20, "savings_pct": 20, "emergency_months": 3}
+    started = {"health_started_at": "2026-10-27T12:00:00Z"}
+    profile = client.put("/profile/", headers=h, json=rule | started).json()
+    assert profile["needs_pct"] == 60 and profile["health_started_at"].startswith("2026-10-27")
+
+    # The default categories come classified; subcategories follow their parent.
+    categories = client.get("/categories/", headers=h).json()
+    by_name = {c["name"]: c for c in categories}
+    assert by_name["Vivienda"]["bucket"] == "need"
+    assert by_name["Restaurantes"]["bucket"] == "want"
+    assert by_name["Otros gastos"]["bucket"] is None
+    assert by_name["Renta"]["bucket"] is None
+    assert by_name["Nómina"]["bucket"] is None
+    # Only expenses are needs or wants.
+    salary = by_name["Nómina"] | {"bucket": "need"}
+    assert client.put(f"/categories/{salary['id']}", headers=h, json=salary).status_code == 409
+
+    debit = client.post("/accounts/", headers=h, json={"name": "Nómina", "type": "debit"}).json()
+    savings = client.post("/accounts/", headers=h, json={"name": "Ahorro", "type": "savings"})
+    month = date.today().replace(day=1)
+
+    def tx(kind: str, amount: str, category: str | None = None, **extra) -> None:
+        body = {"kind": kind, "amount": amount, "occurred_on": str(month)}
+        body |= {"account_id": debit["id"], "category_id": category and by_name[category]["id"]}
+        assert client.post("/transactions/", headers=h, json=body | extra).status_code == 201
+
+    tx("income", "10000", "Nómina")
+    tx("expense", "4000", "Renta")  # need, through Vivienda
+    tx("expense", "500", "Restaurantes")
+    tx("expense", "300", "Cafeterías")  # want, through Restaurantes
+    tx("expense", "100", "Otros gastos")
+    tx("expense", "50")  # no category
+    tx("transfer", "2000", to_account_id=savings.json()["id"])
+
+    r = client.get(f"/transactions/monthly/?since={month}", headers=h).json()
+    totals = {(t["kind"], t["bucket"]): t["amount"] for t in r}
+    assert totals == {
+        ("income", None): "10000.00",
+        ("expense", "need"): "4000.00",
+        ("expense", "want"): "800.00",
+        ("expense", None): "150.00",
+    }
+    assert {t["month"] for t in r} == {str(month)}
+
+
 def test_daily_spending(client, new_user) -> None:
     h = new_user()
     debit = client.post("/accounts/", headers=h, json={"name": "Nómina", "type": "debit"}).json()

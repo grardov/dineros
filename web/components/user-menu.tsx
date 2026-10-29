@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOutIcon, SettingsIcon } from "lucide-react";
+import { CalculatorIcon, HeartPulseIcon, LogOutIcon, SettingsIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -72,6 +72,27 @@ export function UserMenu({
         >
           <SettingsIcon /> Ajustes
         </Link>
+        {/* The sidebar links to them; the phone tab bar has no room. */}
+        {compact &&
+          (
+            [
+              ["/health", HeartPulseIcon, "Salud financiera"],
+              ["/health/calculator", CalculatorIcon, "Calculadora de ahorro"],
+            ] as const
+          ).map(([href, Icon, label]) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setOpen(false)}
+              className={buttonVariants({
+                variant: "ghost",
+                size: "sm",
+                className: "w-full justify-start",
+              })}
+            >
+              <Icon /> {label}
+            </Link>
+          ))}
         <form action={signOut}>
           <Button type="submit" variant="ghost" size="sm" className="w-full justify-start">
             <LogOutIcon /> Salir
