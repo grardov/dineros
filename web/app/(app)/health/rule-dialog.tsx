@@ -20,7 +20,9 @@ const RULE = [
 type Rule = Record<(typeof RULE)[number]["key"], number>;
 
 // Moving one share takes the difference from the other two in proportion, so they always add up
-// to 100 (evenly when the other two are both at 0).
+// to 100 (evenly when the other two are both at 0). `rule` is how the shares stood when the slider
+// was grabbed: rebalancing from each step's rounded result would take every point from the same
+// share.
 function rebalance(rule: Rule, key: keyof Rule, value: number): Rule {
   const [a, b] = RULE.map((r) => r.key).filter((k) => k !== key);
   const rest = 100 - value;
@@ -47,6 +49,7 @@ export function RuleDialog({
     wants_pct: profile.wants_pct,
     savings_pct: profile.savings_pct,
   });
+  const [grabbed, setGrabbed] = useState(rule);
   const [months, setMonths] = useState(profile.emergency_months);
 
   // Each slice starts where the ones before it end.
@@ -103,7 +106,9 @@ export function RuleDialog({
             max={100}
             step={1}
             value={rule[key]}
-            onChange={(e) => setRule(rebalance(rule, key, e.target.valueAsNumber))}
+            onFocus={() => setGrabbed(rule)}
+            onPointerDown={() => setGrabbed(rule)}
+            onChange={(e) => setRule(rebalance(grabbed, key, e.target.valueAsNumber))}
             className="range w-full"
             style={{ "--range": color, "--fill": `${rule[key]}%` } as React.CSSProperties}
           />
