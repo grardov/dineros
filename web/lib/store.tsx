@@ -9,7 +9,7 @@ import type { StoreData } from "@/lib/data";
 import { HIDE_AMOUNTS, money, signedMoney } from "@/lib/types";
 
 const pad = (n: number) => String(n).padStart(2, "0");
-const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+export const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 const MASK = "$••••";
 
@@ -28,6 +28,9 @@ function useStoreValue(data: StoreData) {
       transactions: data.transactions, // newest first
       recurring: data.recurring,
       occurrences: data.occurrences, // this month and next, by due date
+      // Spending without fijos, the last year only: the total and how many expenses.
+      spentOn: (day: string) => data.daily[day]?.amount ?? 0,
+      expensesOn: (day: string) => data.daily[day]?.count ?? 0,
       today,
       hidden,
       toggleHidden: () => {
