@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
-import { CATEGORY_KINDS, type Category, type CategoryKind } from "@/lib/types";
+import { CATEGORY_BUCKETS, CATEGORY_KINDS, type Category, type CategoryKind } from "@/lib/types";
 
 const cols =
   "grid grid-cols-[minmax(0,1fr)_5rem_2.75rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_2.75rem] sm:gap-3.5";
@@ -61,6 +61,12 @@ export default function CategoriesPage() {
           >
             {c.name}
           </button>
+          {/* Subcategories only say so when they differ from their parent. */}
+          {c.kind === "expense" && (c.bucket || !sub) && (
+            <span className="shrink-0 text-xs text-subtle max-sm:hidden">
+              {c.bucket ? CATEGORY_BUCKETS[c.bucket] : "Sin clasificar"}
+            </span>
+          )}
           {kids > 0 && (
             <span className="shrink-0 text-xs text-subtle max-lg:hidden">
               {kids} subcategoría{kids === 1 ? "" : "s"}

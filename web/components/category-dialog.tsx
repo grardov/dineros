@@ -19,7 +19,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { deleteCategory, saveCategory } from "@/lib/actions";
 import { useStore } from "@/lib/store";
-import { CATEGORY_KINDS, type Category, type CategoryKind } from "@/lib/types";
+import {
+  CATEGORY_BUCKETS,
+  CATEGORY_KINDS,
+  type Category,
+  type CategoryBucket,
+  type CategoryKind,
+} from "@/lib/types";
 
 export function CategoryDialog({
   category,
@@ -39,6 +45,8 @@ export function CategoryDialog({
   const [icon, setIcon] = useState(category?.icon ?? "");
   const [picking, setPicking] = useState(false);
   const [parentId, setParentId] = useState(category?.parent_id ?? initialParentId ?? "");
+  const [bucket, setBucket] = useState(category?.bucket ?? "");
+  const parent = store.category(parentId || null);
   // The preview takes the hue the category will have: its parent's, or its own.
   const { tone } = useCategory(parentId || category?.id || null);
   // One level of nesting: a category with subcategories stays top-level.
@@ -72,6 +80,7 @@ export function CategoryDialog({
           icon: icon || null,
           kind,
           parent_id,
+          bucket: kind === "expense" ? (bucket as CategoryBucket) || null : null,
         });
       }}
     >
@@ -147,6 +156,32 @@ export function CategoryDialog({
           ))}
         </NativeSelect>
       </Field>
+
+      {kind === "expense" && (
+        <Field>
+          <FieldLabel htmlFor="bucket">Para Salud financiera es</FieldLabel>
+          <NativeSelect
+            id="bucket"
+            className="w-full"
+            value={bucket}
+            onChange={(e) => setBucket(e.target.value)}
+          >
+            <NativeSelectOption value="">
+              {parent
+                ? `Igual que ${parent.name}${parent.bucket ? ` (${CATEGORY_BUCKETS[parent.bucket].toLowerCase()})` : ""}`
+                : "Sin clasificar"}
+            </NativeSelectOption>
+            {Object.entries(CATEGORY_BUCKETS).map(([value, label]) => (
+              <NativeSelectOption key={value} value={value}>
+                {label}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+          <FieldDescription>
+            Necesidad: lo que tienes que pagar sí o sí. Deseo: lo que podrías recortar.
+          </FieldDescription>
+        </Field>
+      )}
 
       {category && (
         <p className="flex gap-2.5 rounded-lg bg-background px-3 py-2.5 text-[0.78rem] leading-snug text-sidebar-foreground">

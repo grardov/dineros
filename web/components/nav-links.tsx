@@ -2,6 +2,8 @@
 
 import {
   ArrowLeftRightIcon,
+  CalculatorIcon,
+  HeartPulseIcon,
   HouseIcon,
   PlusIcon,
   RepeatIcon,
@@ -13,41 +15,74 @@ import { usePathname } from "next/navigation";
 
 import { NewTransactionButton } from "@/components/transaction-list";
 
-const LINKS = [
+type NavLink = {
+  href: string;
+  label: string;
+  icon: typeof HouseIcon;
+  sub?: NavLink[];
+};
+
+const LINKS: NavLink[] = [
   { href: "/dashboard", label: "Resumen", icon: HouseIcon },
   { href: "/transactions", label: "Movimientos", icon: ArrowLeftRightIcon },
   { href: "/recurring", label: "Fijos", icon: RepeatIcon },
   { href: "/accounts", label: "Cuentas", icon: WalletIcon },
   { href: "/categories", label: "Categorías", icon: TagsIcon },
+  {
+    href: "/health",
+    label: "Salud",
+    icon: HeartPulseIcon,
+    sub: [{ href: "/health/calculator", label: "Calculadora", icon: CalculatorIcon }],
+  },
 ];
-// The phone tab bar fits four around "+"; Categorías stays in the sidebar and on Resumen.
-const MOBILE = LINKS.filter((l) => l.href !== "/categories");
+// The phone tab bar fits four around "+": Categorías is reached from Resumen, Salud from the
+// account menu.
+const MOBILE = LINKS.filter((l) => l.href !== "/categories" && l.href !== "/health");
 
 const isActive = (href: string, pathname: string) => pathname.startsWith(href);
 
-// Vertical list in the sidebar from md up.
+function NavItem({ href, label, icon: Icon, active }: NavLink & { active: boolean }) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={`flex h-9 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors hover:bg-sidebar-accent ${
+        active
+          ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
+          : "font-medium text-sidebar-foreground"
+      }`}
+    >
+      <Icon className={`size-4 shrink-0 ${active ? "text-primary" : "text-[#6b7480]"}`} />
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
+
+// Vertical list in the sidebar from md up. Sub-links hang from their parent's icon on a line that
+// curves into each one.
 export function NavLinks() {
   const pathname = usePathname();
   return (
     <nav className="flex flex-col gap-0.5">
-      {LINKS.map(({ href, label, icon: Icon }) => {
-        const active = isActive(href, pathname);
-        return (
-          <Link
-            key={href}
-            href={href}
-            aria-current={active ? "page" : undefined}
-            className={`flex h-9 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors hover:bg-sidebar-accent ${
-              active
-                ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
-                : "font-medium text-sidebar-foreground"
-            }`}
-          >
-            <Icon className={`size-4 ${active ? "text-primary" : "text-[#6b7480]"}`} />
-            {label}
-          </Link>
-        );
-      })}
+      {LINKS.map((link) => (
+        <div key={link.href} className="flex flex-col gap-0.5">
+          {/* On a sub-page, the sub-link is the one marked. */}
+          <NavItem
+            {...link}
+            active={
+              isActive(link.href, pathname) && !link.sub?.some((s) => isActive(s.href, pathname))
+            }
+          />
+          {link.sub?.map((s) => (
+            <div
+              key={s.href}
+              className="relative ml-[17px] pl-3.5 before:absolute before:-top-1 before:left-0 before:h-[calc(50%+4px)] before:w-3 before:rounded-bl-[7px] before:border-b before:border-l before:border-[#cfd4da] not-last:after:absolute not-last:after:inset-y-0 not-last:after:left-0 not-last:after:border-l not-last:after:border-[#cfd4da]"
+            >
+              <NavItem {...s} active={isActive(s.href, pathname)} />
+            </div>
+          ))}
+        </div>
+      ))}
     </nav>
   );
 }
@@ -55,7 +90,7 @@ export function NavLinks() {
 // Tab bar on phones, with "new transaction" in the middle. Lives inside the store provider.
 export function MobileNav() {
   const pathname = usePathname();
-  const tab = ({ href, label, icon: Icon }: (typeof LINKS)[number]) => (
+  const tab = ({ href, label, icon: Icon }: NavLink) => (
     <Link
       key={href}
       href={href}
