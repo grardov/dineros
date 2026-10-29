@@ -21,8 +21,10 @@ import {
   EmptyState,
   MoreLink,
   PageHeader,
+  SpendingGrid,
   Stat,
   UtilizationBar,
+  addDays,
   capitalize,
   dayMonth,
   monthName,
@@ -216,8 +218,10 @@ export default function Home() {
         <NewTransactionButton className="max-md:hidden" />
       </PageHeader>
 
-      <div className="stagger grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
-        <Card className="col-span-2 max-md:border-0 max-md:bg-primary max-md:text-primary-foreground md:col-span-1">
+      {/* Gastos del mes gets the extra width: its amount shares the row with the month's days. On
+          phones each figure takes a row, so that fits there too. */}
+      <div className="stagger grid grid-cols-1 gap-3 md:grid-cols-[1.35fr_1fr] md:gap-4 xl:grid-cols-[1fr_1fr_1.3fr_1fr]">
+        <Card className="max-md:border-0 max-md:bg-primary max-md:text-primary-foreground">
           <CardContent>
             <Stat
               label={<span className="max-md:text-primary-foreground/80">Patrimonio neto</span>}
@@ -234,8 +238,7 @@ export default function Home() {
             </Stat>
           </CardContent>
         </Card>
-        {/* Under 360px half a row can't hold a five-digit amount. */}
-        <Card className="max-[359px]:col-span-2">
+        <Card>
           <CardContent>
             <Stat label="Ingresos del mes">
               <Amount
@@ -251,8 +254,9 @@ export default function Home() {
             </Stat>
           </CardContent>
         </Card>
-        <Card className="max-[359px]:col-span-2">
-          <CardContent>
+        <Card>
+          {/* The month's days sit beside the amount when there's room, below it when not. */}
+          <CardContent className="flex flex-wrap items-end justify-between gap-x-3 gap-y-3">
             <Stat label="Gastos del mes">
               <Amount
                 value={now.expense}
@@ -266,9 +270,14 @@ export default function Home() {
                 lowerIsBetter
               />
             </Stat>
+            <SpendingGrid
+              from={`${month}-01`}
+              to={addDays(`${shiftMonth(month, 1)}-01`, -1)}
+              label={`Gasto variable por día en ${monthName(month, false).toLowerCase()}`}
+            />
           </CardContent>
         </Card>
-        <Card className="col-span-2 md:col-span-1">
+        <Card>
           <CardContent>
             <Stat label="Ahorro del mes">
               <Amount value={saved} className="text-xl leading-none md:text-[26px]" />
