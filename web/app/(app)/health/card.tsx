@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 
-import { Stat, shiftMonth } from "@/components/finance";
+import { Stat } from "@/components/finance";
 import { Card, CardContent } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
 import type { Transaction } from "@/lib/types";
 import { cn } from "cn";
 
+import { useTypicalIncome } from "./calculator";
 import { atLeast, atMost, pct, type Tone } from "./health";
 
 const TEXT: Record<Tone, string> = {
@@ -44,10 +45,7 @@ export function HealthCard({ month }: { month: string }) {
   };
 
   const now = of(month);
-  const pastIncome = [1, 2, 3].map((i) => of(shiftMonth(thisMonth, -i)).income).filter(Boolean);
-  const typicalIncome = pastIncome.length
-    ? pastIncome.reduce((s, n) => s + n, 0) / pastIncome.length
-    : 0;
+  const typicalIncome = useTypicalIncome();
   const base = month === thisMonth ? Math.max(now.income, typicalIncome) : now.income;
   const saved = base - now.spent;
 

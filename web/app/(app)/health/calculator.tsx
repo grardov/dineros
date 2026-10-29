@@ -4,7 +4,8 @@ import { useState } from "react";
 
 import { MoneyInput } from "@/components/form-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { shiftMonth } from "@/components/finance";
+import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
@@ -51,17 +52,34 @@ function Row({
   );
 }
 
+// What usually comes in a month: the average of the last three closed months with any income, or
+// this month's when there's none.
+export function useTypicalIncome() {
+  const store = useStore();
+  const thisMonth = store.today.slice(0, 7);
+  const income = (ym: string) =>
+    store.transactions
+      .filter((t) => t.kind === "income" && t.occurred_on.startsWith(ym))
+      .reduce((s, t) => s + t.amount, 0);
+  const past = [1, 2, 3].map((i) => income(shiftMonth(thisMonth, -i))).filter(Boolean);
+  return past.length ? past.reduce((s, n) => s + n, 0) / past.length : income(thisMonth);
+}
+
+// Money at hand: what's in debit, cash and savings accounts.
+export function useLiquid() {
+  const store = useStore();
+  return store.accounts
+    .filter((a) => !a.archived_at && ["debit", "cash", "savings"].includes(a.type))
+    .reduce((s, a) => s + Math.max(store.balance(a.id), 0), 0);
+}
+
 // How much to set aside from a paycheck under the user's rule, next to common guidelines, and how
-// long the fondo de emergencia takes at that pace (counting what `liquid` already holds).
-export function SavingsCalculator({
-  defaultIncome,
-  liquid,
-}: {
-  defaultIncome: number; // monthly
-  liquid: number;
-}) {
+// long the fondo de emergencia takes at that pace (counting the money already at hand).
+export function SavingsCalculator() {
   const store = useStore();
   const { profile } = store;
+  const defaultIncome = Math.round(useTypicalIncome() * 100) / 100; // monthly
+  const liquid = useLiquid();
   const [amount, setAmount] = useState<number | null>(defaultIncome || null);
   const [pay, setPay] = useState<Pay>("month");
   const monthly = (amount ?? 0) * PAY[pay].perMonth;
@@ -75,9 +93,6 @@ export function SavingsCalculator({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Calculadora de ahorro</CardTitle>
-      </CardHeader>
       <CardContent className="grid grid-cols-1 gap-x-8 gap-y-5 lg:grid-cols-2">
         <div className="flex flex-col gap-4">
           <Field>

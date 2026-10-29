@@ -14,13 +14,25 @@ import { usePathname } from "next/navigation";
 
 import { NewTransactionButton } from "@/components/transaction-list";
 
-const LINKS = [
+type NavLink = {
+  href: string;
+  label: string;
+  icon: typeof HouseIcon;
+  sub?: { href: string; label: string }[];
+};
+
+const LINKS: NavLink[] = [
   { href: "/dashboard", label: "Resumen", icon: HouseIcon },
   { href: "/transactions", label: "Movimientos", icon: ArrowLeftRightIcon },
   { href: "/recurring", label: "Fijos", icon: RepeatIcon },
   { href: "/accounts", label: "Cuentas", icon: WalletIcon },
   { href: "/categories", label: "Categorías", icon: TagsIcon },
-  { href: "/health", label: "Salud", icon: HeartPulseIcon },
+  {
+    href: "/health",
+    label: "Salud",
+    icon: HeartPulseIcon,
+    sub: [{ href: "/health/calculator", label: "Calculadora" }],
+  },
 ];
 // The phone tab bar fits four around "+": Categorías is reached from Resumen, Salud from the
 // account menu.
@@ -33,22 +45,38 @@ export function NavLinks() {
   const pathname = usePathname();
   return (
     <nav className="flex flex-col gap-0.5">
-      {LINKS.map(({ href, label, icon: Icon }) => {
-        const active = isActive(href, pathname);
+      {LINKS.map(({ href, label, icon: Icon, sub }) => {
+        // On a sub-page, the sub-link is the one marked.
+        const active = isActive(href, pathname) && !sub?.some((s) => isActive(s.href, pathname));
         return (
-          <Link
-            key={href}
-            href={href}
-            aria-current={active ? "page" : undefined}
-            className={`flex h-9 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors hover:bg-sidebar-accent ${
-              active
-                ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
-                : "font-medium text-sidebar-foreground"
-            }`}
-          >
-            <Icon className={`size-4 ${active ? "text-primary" : "text-[#6b7480]"}`} />
-            {label}
-          </Link>
+          <div key={href} className="flex flex-col gap-0.5">
+            <Link
+              href={href}
+              aria-current={active ? "page" : undefined}
+              className={`flex h-9 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors hover:bg-sidebar-accent ${
+                active
+                  ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
+                  : "font-medium text-sidebar-foreground"
+              }`}
+            >
+              <Icon className={`size-4 ${active ? "text-primary" : "text-[#6b7480]"}`} />
+              {label}
+            </Link>
+            {sub && (
+              <div className="ml-[18px] flex flex-col gap-0.5 border-l border-sidebar-border pl-2.5">
+                {sub.map((s) => (
+                  <Link
+                    key={s.href}
+                    href={s.href}
+                    aria-current={isActive(s.href, pathname) ? "page" : undefined}
+                    className="flex h-8 items-center rounded-md px-2.5 text-[0.8125rem] font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-semibold aria-[current=page]:text-sidebar-accent-foreground"
+                  >
+                    {s.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         );
       })}
     </nav>
@@ -58,7 +86,7 @@ export function NavLinks() {
 // Tab bar on phones, with "new transaction" in the middle. Lives inside the store provider.
 export function MobileNav() {
   const pathname = usePathname();
-  const tab = ({ href, label, icon: Icon }: (typeof LINKS)[number]) => (
+  const tab = ({ href, label, icon: Icon }: NavLink) => (
     <Link
       key={href}
       href={href}

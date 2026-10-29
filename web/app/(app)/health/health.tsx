@@ -16,7 +16,7 @@ import { useStore } from "@/lib/store";
 import type { MonthlyTotal } from "@/lib/types";
 import { cn } from "cn";
 
-import { SavingsCalculator } from "./calculator";
+import { useLiquid, useTypicalIncome } from "./calculator";
 import { RuleDialog } from "./rule-dialog";
 import { HealthSetup } from "./setup";
 
@@ -141,19 +141,13 @@ export function Health({ totals }: { totals: MonthlyTotal[] }) {
   // Fondo de emergencia: money at hand over what needs cost in a month (the last three closed
   // months with any, or this one).
   const accounts = store.accounts.filter((a) => !a.archived_at);
-  const liquid = accounts
-    .filter((a) => a.type === "debit" || a.type === "cash" || a.type === "savings")
-    .reduce((s, a) => s + Math.max(store.balance(a.id), 0), 0);
+  const liquid = useLiquid();
   const pastNeeds = [1, 2, 3].map((i) => of(shiftMonth(thisMonth, -i)).needs).filter(Boolean);
   const monthlyNeeds = pastNeeds.length
     ? pastNeeds.reduce((s, n) => s + n, 0) / pastNeeds.length
     : of(thisMonth).needs;
   const fundMonths = monthlyNeeds ? liquid / monthlyNeeds : null;
-  // What usually comes in a month, for the calculator: the last three closed months with any.
-  const pastIncome = [1, 2, 3].map((i) => of(shiftMonth(thisMonth, -i)).income).filter(Boolean);
-  const typicalIncome = pastIncome.length
-    ? pastIncome.reduce((s, n) => s + n, 0) / pastIncome.length
-    : of(thisMonth).income;
+  const typicalIncome = useTypicalIncome();
 
   // Credit cards: how much of the limit is used, and whether any closed statement went unpaid.
   const cards = accounts.filter((a) => a.type === "credit");
@@ -417,7 +411,6 @@ export function Health({ totals }: { totals: MonthlyTotal[] }) {
           </span>
         </Indicator>
       </div>
-      <SavingsCalculator defaultIncome={typicalIncome} liquid={liquid} />
       {editingRule && <RuleDialog income={now.income} onClose={() => setEditingRule(false)} />}
     </>
   );
