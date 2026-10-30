@@ -70,7 +70,8 @@ export function FormDialog({
     });
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && close()}>
+    // A stray click outside shouldn't throw away a half-filled form: close with Cancelar, X or Esc.
+    <Dialog open={open} onOpenChange={(o) => !o && close()} disablePointerDismissal>
       <DialogContent className="max-h-[90vh] gap-5 overflow-y-auto p-6 sm:max-w-[460px]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

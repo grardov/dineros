@@ -26,6 +26,17 @@ import {
 } from "@/components/finance";
 import { CopyRow, ShareButtons, shareText } from "@/components/share";
 import { NewTransactionButton, TransactionRows } from "@/components/transaction-list";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -234,6 +245,7 @@ export default function AccountPage() {
   const store = useStore();
   const [editingAccount, setEditingAccount] = useState(false);
   const [archiving, startArchiving] = useTransition();
+  const [confirmingArchive, setConfirmingArchive] = useState(false);
   const account = store.account(id);
 
   if (!account)
@@ -250,6 +262,17 @@ export default function AccountPage() {
   const transactions = store.transactions.filter(
     (t) => t.account_id === id || t.to_account_id === id,
   );
+  const toggleArchived = () => {
+    const archived_at = account.archived_at ? null : new Date().toISOString();
+    startArchiving(async () => {
+      const err = await saveAccount(account.id, { ...account, archived_at });
+      toast.add(
+        err
+          ? { title: err, type: "error" }
+          : { title: archived_at ? "Cuenta archivada" : "Cuenta desarchivada", type: "success" },
+      );
+    });
+  };
 
   return (
     <>
@@ -285,27 +308,39 @@ export default function AccountPage() {
           </span>
         }
       >
-        <Button
-          variant="ghost"
-          disabled={archiving}
-          onClick={() => {
-            const archived_at = account.archived_at ? null : new Date().toISOString();
-            startArchiving(async () => {
-              const err = await saveAccount(account.id, { ...account, archived_at });
-              toast.add(
-                err
-                  ? { title: err, type: "error" }
-                  : {
-                      title: archived_at ? "Cuenta archivada" : "Cuenta desarchivada",
-                      type: "success",
-                    },
-              );
-            });
-          }}
-        >
-          {account.archived_at ? <ArchiveRestoreIcon /> : <ArchiveIcon />}
-          {account.archived_at ? "Desarchivar" : "Archivar"}
-        </Button>
+        {/* Archiving asks first and says what it does; unarchiving just undoes it. */}
+        {account.archived_at ? (
+          <Button variant="ghost" disabled={archiving} onClick={toggleArchived}>
+            <ArchiveRestoreIcon /> Desarchivar
+          </Button>
+        ) : (
+          <AlertDialog open={confirmingArchive} onOpenChange={setConfirmingArchive}>
+            <AlertDialogTrigger render={<Button variant="ghost" disabled={archiving} />}>
+              <ArchiveIcon /> Archivar
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Archivar {account.name}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Sale de tu resumen, su saldo deja de contar en tus totales y ya no la verás al
+                  registrar movimientos. Sus movimientos no se borran: los sigues viendo aquí y en
+                  Movimientos. Puedes desarchivarla cuando quieras.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    setConfirmingArchive(false);
+                    toggleArchived();
+                  }}
+                >
+                  Archivar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
         <Button variant="outline" onClick={() => setEditingAccount(true)}>
           <PencilIcon /> Editar
         </Button>
