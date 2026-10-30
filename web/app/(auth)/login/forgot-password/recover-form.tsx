@@ -10,7 +10,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
 import { requestPasswordReset } from "../../actions";
-import { AuthCard, FormAlert, SubmitButton } from "../../auth-ui";
+import { AuthCard, Captcha, FormAlert, SubmitButton } from "../../auth-ui";
 
 // /auth/confirm sends people back here when their link is expired or already used.
 function ExpiredLinkAlert() {
@@ -89,6 +89,8 @@ export function RecoverForm() {
               </SubmitButton>
             </>
           )}
+          {/* Also covers "Reenviar correo". */}
+          <Captcha resetOn={state} />
         </FieldGroup>
       </form>
     </AuthCard>

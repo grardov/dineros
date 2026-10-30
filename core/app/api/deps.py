@@ -51,14 +51,14 @@ CurrentUserId = Annotated[uuid.UUID, Depends(get_user_id)]
 
 def get_db(claims: ClaimsDep) -> Generator[Session]:
     with Session(engine) as session:
-        # Every transaction in this session runs as `authenticated` with the caller's claims, so
-        # Postgres RLS (auth.uid()) scopes all reads and writes to the user. `set_config(..., true)`
-        # is transaction-local, so nothing leaks to the next request using the pooled connection.
+        # Every transaction in this session runs as `core` with the caller's claims, so Postgres
+        # RLS (auth.uid()) scopes all reads and writes to the user. `set_config(..., true)` is
+        # transaction-local, so nothing leaks to the next request using the pooled connection.
         @event.listens_for(session, "after_begin")
         def _run_as_user(_session, _transaction, connection) -> None:
             connection.execute(
                 text(
-                    "select set_config('role', 'authenticated', true),"
+                    "select set_config('role', 'core', true),"
                     " set_config('request.jwt.claims', :claims, true)"
                 ),
                 {"claims": json.dumps(claims)},

@@ -9,6 +9,7 @@ export async function proxy(request: NextRequest) {
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_PUBLISHABLE_KEY!,
     {
+      cookieOptions: { httpOnly: true }, // like lib/supabase.ts
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll: (toSet, headers) => {
