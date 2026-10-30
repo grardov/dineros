@@ -423,7 +423,8 @@ export function OnboardingWizard({ categories }: { categories: Category[] }) {
                 })}
               </div>
               <span className="text-[0.8125rem] text-muted-foreground">
-                ¿Te pagan por quincena? Marca Nómina el día 15 y agrega la del 30 en Fijos.
+                ¿Te pagan por quincena? Pon en Nómina lo de una quincena. Al terminar, agrega la
+                segunda (día 30) desde la sección Fijos.
               </span>
             </>
           )}
