@@ -4,9 +4,10 @@ from datetime import date
 from fastapi import APIRouter, Query, status
 from sqlalchemy import Date, cast, literal_column
 from sqlalchemy.orm import aliased
-from sqlmodel import func, or_, select
+from sqlmodel import Session, col, func, or_, select
 
-from app.api.deps import CurrentUserId, SessionDep, get_or_404
+from app.api.deps import CurrentUserId, SessionDep, StorageDep, get_or_404
+from app.core.storage import Storage, referenced
 from app.models import Category, DailySpending, MonthlyTotal, Transaction, TransactionCreate
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
@@ -81,16 +82,31 @@ def create_transaction(
 
 @router.put("/{transaction_id}")
 def update_transaction(
-    session: SessionDep, transaction_id: uuid.UUID, body: TransactionCreate
+    session: SessionDep, storage: StorageDep, transaction_id: uuid.UUID, body: TransactionCreate
 ) -> Transaction:
     transaction = get_or_404(session, Transaction, transaction_id)
+    dropped = referenced(transaction.notes) - referenced(body.notes)
     transaction.sqlmodel_update(body.model_dump())
     session.commit()
     session.refresh(transaction)
+    _remove_unreferenced(session, storage, dropped)
     return transaction
 
 
 @router.delete("/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_transaction(session: SessionDep, transaction_id: uuid.UUID) -> None:
-    session.delete(get_or_404(session, Transaction, transaction_id))
+def delete_transaction(session: SessionDep, storage: StorageDep, transaction_id: uuid.UUID) -> None:
+    transaction = get_or_404(session, Transaction, transaction_id)
+    dropped = referenced(transaction.notes)
+    session.delete(transaction)
     session.commit()
+    _remove_unreferenced(session, storage, dropped)
+
+
+def _remove_unreferenced(session: Session, storage: Storage, names: set[str]) -> None:
+    """Deletes the files a note stopped referencing, unless it was copied into another note."""
+    kept = {
+        n
+        for n in names
+        if session.exec(select(Transaction.id).where(col(Transaction.notes).contains(n))).first()
+    }
+    storage.remove(names - kept)

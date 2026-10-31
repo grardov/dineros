@@ -84,7 +84,8 @@ Haz merge con **merge commit** (no squash) para que `staging` y `main` no diverj
 2. **Fly** (`core/fly.toml`):
    ```bash
    cd core && fly apps create dineros-core
-   fly secrets set DATABASE_URL="<Session pooler>" SUPABASE_URL="https://<ref>.supabase.co"
+   fly secrets set DATABASE_URL="<Session pooler>" SUPABASE_URL="https://<ref>.supabase.co" \
+     SUPABASE_PUBLISHABLE_KEY="<publishable key>"
    fly tokens create deploy
    ```
 3. **GitHub:** en _Settings > Environments_ crea `production` con los secrets `SUPABASE_DB_URL`

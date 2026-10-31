@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, HTTPException, status
 from sqlmodel import col, delete, text
 
-from app.api.deps import CurrentUserId, SessionDep, get_or_404
+from app.api.deps import CurrentUserId, SessionDep, StorageDep, get_or_404
 from app.models import Account, Category, Onboarding, Profile, ProfileUpdate, Recurring
 
 router = APIRouter(prefix="/profile", tags=["profile"])
@@ -54,7 +54,8 @@ def onboard(session: SessionDep, user_id: CurrentUserId, body: Onboarding) -> Pr
 
 
 @router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(session: SessionDep) -> None:
-    """Deletes the signed-in user and everything they own. No undo."""
+def delete_user(session: SessionDep, storage: StorageDep) -> None:
+    """Deletes the signed-in user and everything they own, attachments included. No undo."""
     session.exec(text("select public.delete_current_user()"))
     session.commit()
+    storage.clear()
