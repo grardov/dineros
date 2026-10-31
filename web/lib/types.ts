@@ -211,3 +211,25 @@ export function shortDate(iso: string) {
     year: "numeric",
   });
 }
+
+// Notes are Markdown; files are referenced as ![name](/attachments/…) or [name](/attachments/…).
+const ATTACHMENT = /(!?)\[([^\]]*)\]\((\/attachments\/[^)\s]+)\)/g;
+
+export function attachments(notes: string | null) {
+  return [...(notes ?? "").matchAll(ATTACHMENT)].map(([, bang, label, src]) => ({
+    image: bang === "!",
+    label: label.replace(/\\(.)/g, "$1") || src.split("/").pop()!,
+    src,
+  }));
+}
+
+// One line of the note for lists: no files, no Markdown marks.
+export function plainNotes(notes: string | null) {
+  return (notes ?? "")
+    .replace(ATTACHMENT, "")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/^\s*(?:[-*+]|\d+\.)\s+/gm, "")
+    .replace(/\\(.)|[*_~]/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+}

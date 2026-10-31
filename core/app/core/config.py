@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     DATABASE_URL: PostgresDsn = "postgresql+psycopg://postgres:postgres@127.0.0.1:55322/postgres"
     # Supabase Auth issues the JWTs; core verifies them against this project's public keys (JWKS).
     SUPABASE_URL: str = "http://127.0.0.1:55321"
+    # Storage's gateway wants it with the user's JWT. Local default: `pnpm --filter db status`.
+    SUPABASE_PUBLISHABLE_KEY: str = "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH"
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod

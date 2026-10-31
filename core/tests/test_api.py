@@ -455,3 +455,49 @@ def test_daily_spending(client, new_user) -> None:
         {"day": str(since), "amount": "20.00", "count": 1},
         {"day": str(today), "amount": "150.50", "count": 2},
     ]
+
+
+def test_attachments_are_private_and_follow_their_notes(client, new_user) -> None:
+    alice, bob = new_user(), new_user()
+    jpg = b"\xff\xd8\xff\xe0" + b"0" * 100
+
+    # Typed by content, not by the name or Content-Type the browser sends.
+    files = {"file": ("x.jpg", b"<svg onload=alert(1)>", "image/jpeg")}
+    assert client.post("/attachments/", headers=alice, files=files).status_code == 415
+    big = {"file": ("x.jpg", jpg + b"0" * 4 * 1024 * 1024, "image/jpeg")}
+    assert client.post("/attachments/", headers=alice, files=big).status_code == 413
+    r = client.post("/attachments/", headers=alice, files={"file": ("t.png", jpg, "image/png")})
+    name = r.json()["name"]
+    assert r.status_code == 201 and name.endswith(".jpg")
+
+    r = client.get(f"/attachments/{name}", headers=alice)
+    assert (r.status_code, r.content, r.headers["content-type"]) == (200, jpg, "image/jpeg")
+    assert r.headers["x-content-type-options"] == "nosniff"
+    # Bob, or no one, can't read it even knowing the name.
+    assert client.get(f"/attachments/{name}", headers=bob).status_code == 404
+    assert client.get(f"/attachments/{name}").status_code == 401
+    assert client.get("/attachments/..%2Fx.jpg", headers=alice).status_code == 404
+
+    acct = client.post("/accounts/", headers=alice, json={"name": "E", "type": "cash"}).json()
+    tx = {
+        "kind": "expense",
+        "amount": "10",
+        "occurred_on": str(date.today()),
+        "account_id": acct["id"],
+        "notes": f"**Ticket** ![t.jpg](/attachments/{name})",
+    }
+    a = client.post("/transactions/", headers=alice, json=tx).json()
+    # The same note copied into another transaction keeps the file alive.
+    b = client.post("/transactions/", headers=alice, json=tx).json()
+    assert client.put(
+        f"/transactions/{a['id']}", headers=alice, json=tx | {"notes": None}
+    ).is_success
+    assert client.get(f"/attachments/{name}", headers=alice).status_code == 200
+    assert client.delete(f"/transactions/{b['id']}", headers=alice).status_code == 204
+    assert client.get(f"/attachments/{name}", headers=alice).status_code == 404
+
+    # Deleting the account takes every file with it.
+    r = client.post("/attachments/", headers=alice, files={"file": ("f.pdf", b"%PDF-1.7", "x")})
+    other = r.json()["name"]
+    assert client.delete("/profile/", headers=alice).status_code == 204
+    assert client.get(f"/attachments/{other}", headers=alice).status_code in (401, 404)

@@ -8,6 +8,7 @@ import {
   MapPinIcon,
   WalletIcon,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 
 import { AccountDialog } from "@/components/account-dialog";
@@ -19,10 +20,16 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { deleteTransaction, saveTransaction } from "@/lib/actions";
 import { useStore } from "@/lib/store";
 import { TRANSACTION_KINDS, type Transaction, type TransactionKind } from "@/lib/types";
+
+// TipTap is heavy for a list page: loaded when a dialog opens. The hidden input below holds the
+// note meanwhile, so saving before it loads doesn't wipe it.
+const NotesEditor = dynamic(() => import("@/components/notes-editor"), {
+  ssr: false,
+  loading: () => <div className="h-[6.5rem] rounded-md border border-input bg-card" />,
+});
 
 const KIND_ICONS = {
   expense: ArrowUpRightIcon,
@@ -132,6 +139,7 @@ export function TransactionDialog({
   );
   const currency = store.account(accountChoice)?.currency ?? "MXN";
   const [creatingAccount, setCreatingAccount] = useState(false);
+  const [notes, setNotes] = useState(initial?.notes ?? "");
 
   // Every movement belongs to an account, so the first one has to exist before the form.
   if (!accounts.length) {
@@ -349,14 +357,9 @@ export function TransactionDialog({
         )}
       </Field>
       <Field>
-        <FieldLabel htmlFor="notes">Notas</FieldLabel>
-        <Textarea
-          id="notes"
-          name="notes"
-          rows={2}
-          placeholder="Opcional"
-          defaultValue={initial?.notes ?? ""}
-        />
+        <FieldLabel>Notas</FieldLabel>
+        <input type="hidden" name="notes" value={notes} />
+        <NotesEditor defaultValue={initial?.notes ?? ""} onChange={setNotes} />
       </Field>
     </FormDialog>
   );

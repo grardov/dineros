@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRightIcon, MapPinIcon, PlusIcon } from "lucide-react";
+import { ArrowRightIcon, MapPinIcon, PaperclipIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 
 import { CategoryChip, TransactionIcon, useCategory } from "@/components/category-icon";
@@ -8,7 +8,7 @@ import { capitalize, dayMonth } from "@/components/finance";
 import { TransactionDialog } from "@/components/transaction-dialog";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
-import { type Transaction, type TransactionKind } from "@/lib/types";
+import { attachments, plainNotes, type Transaction, type TransactionKind } from "@/lib/types";
 import { cn } from "cn";
 
 // Signed from the point of view of `accountId` when given: a transfer is money out of one account
@@ -74,7 +74,13 @@ function Row({
               : `${parent ? `${parent.name} › ` : ""}${category?.name ?? "Sin categoría"} · ${account.name}`}
           </span>
           <span className="hidden flex-wrap items-center gap-2 @3xl:flex">
-            {t.notes && <span className="truncate">{t.notes}</span>}
+            {plainNotes(t.notes) && <span className="truncate">{plainNotes(t.notes)}</span>}
+            {attachments(t.notes).length > 0 && (
+              <span className="inline-flex items-center gap-0.5">
+                <PaperclipIcon className="size-3" />
+                {attachments(t.notes).length}
+              </span>
+            )}
             {t.location_name && (
               <span className="inline-flex items-center gap-0.5">
                 <MapPinIcon className="size-3" />

@@ -11,6 +11,7 @@ from sqlmodel import Session, SQLModel, text
 
 from app.core.config import settings
 from app.core.db import engine
+from app.core.storage import Storage
 
 _issuer = f"{settings.SUPABASE_URL}/auth/v1"
 # Supabase signs user JWTs with an asymmetric key; the public keys are cached after first fetch.
@@ -47,6 +48,15 @@ def get_user_id(claims: ClaimsDep) -> uuid.UUID:
 
 
 CurrentUserId = Annotated[uuid.UUID, Depends(get_user_id)]
+
+
+def get_storage(
+    user_id: CurrentUserId, creds: Annotated[HTTPAuthorizationCredentials, Depends(_bearer)]
+) -> Storage:
+    return Storage(creds.credentials, user_id)
+
+
+StorageDep = Annotated[Storage, Depends(get_storage)]
 
 
 def get_db(claims: ClaimsDep) -> Generator[Session]:
