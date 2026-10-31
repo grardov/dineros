@@ -455,3 +455,17 @@ def test_daily_spending(client, new_user) -> None:
         {"day": str(since), "amount": "20.00", "count": 1},
         {"day": str(today), "amount": "150.50", "count": 2},
     ]
+
+
+def test_tags_are_normalized(client, new_user) -> None:
+    h = new_user()
+    debit = client.post("/accounts/", headers=h, json={"name": "Nómina", "type": "debit"}).json()
+    tx = {"kind": "expense", "amount": "10", "occurred_on": str(date.today())}
+    tags = ["#Viaje", " fin  de semana ", "", "viaje", "Café"]
+    r = client.post(
+        "/transactions/", headers=h, json=tx | {"account_id": debit["id"], "tags": tags}
+    )
+    assert r.json()["tags"] == ["viaje", "fin-de-semana", "café"]
+    edit = tx | {"account_id": debit["id"], "tags": ["##Pareja"]}
+    r = client.put(f"/transactions/{r.json()['id']}", headers=h, json=edit)
+    assert r.json()["tags"] == ["pareja"]

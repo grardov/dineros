@@ -7,6 +7,7 @@ import {
   InfoIcon,
   MapPinIcon,
   WalletIcon,
+  XIcon,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -97,6 +98,75 @@ export function CategorySelect({
           )),
       ])}
     </NativeSelect>
+  );
+}
+
+// Lowercase, no spaces or leading #: the list already shows tags as #tag. Same rules as the
+// database's normalize_tags, so the pills show what gets saved.
+const normalizeTag = (t: string) =>
+  t
+    .replace(/^[#\s]+|\s+$/g, "")
+    .replace(/\s+/g, "-")
+    .toLowerCase();
+
+// Each tag becomes a pill on Enter, comma or blur. Submits as a comma list through a hidden input,
+// text still being typed included.
+function TagInput({ defaultValue = [] }: { defaultValue?: string[] }) {
+  const store = useStore();
+  const [tags, setTags] = useState(defaultValue);
+  const [draft, setDraft] = useState("");
+  const add = (raw: string) => {
+    const fresh = raw.split(",").map(normalizeTag).filter(Boolean);
+    setTags((ts) => [...new Set([...ts, ...fresh])]);
+    setDraft("");
+  };
+  const known = [...new Set(store.transactions.flatMap((t) => t.tags))].filter(
+    (t) => !tags.includes(t),
+  );
+  return (
+    <div className="flex min-h-9 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-card px-2 py-1 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-accent dark:bg-input/30">
+      <input type="hidden" name="tags" value={[...tags, draft].join(",")} />
+      {tags.map((tag) => (
+        <span
+          key={tag}
+          className="inline-flex h-6 items-center gap-0.5 rounded-[5px] bg-secondary pr-0.5 pl-1.5 text-xs text-sidebar-foreground"
+        >
+          #{tag}
+          <button
+            type="button"
+            aria-label={`Quitar ${tag}`}
+            className="rounded-sm p-0.5 text-muted-foreground hover:bg-background hover:text-foreground"
+            onClick={() => setTags((ts) => ts.filter((t) => t !== tag))}
+          >
+            <XIcon className="size-3" />
+          </button>
+        </span>
+      ))}
+      <input
+        id="tags"
+        list="known-tags"
+        value={draft}
+        placeholder={tags.length ? "" : "vacaciones, pareja"}
+        className="h-6 min-w-[8ch] flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground md:text-sm"
+        onChange={(e) =>
+          e.target.value.includes(",") ? add(e.target.value) : setDraft(e.target.value)
+        }
+        onBlur={() => draft && add(draft)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && draft.trim()) {
+            e.preventDefault(); // add the tag, don't submit the form
+            add(draft);
+          } else if (e.key === "Backspace" && !draft && tags.length) {
+            setTags((ts) => ts.slice(0, -1));
+          }
+        }}
+      />
+      <datalist id="known-tags">
+        {known.map((t) => (
+          <option key={t} value={t} />
+        ))}
+      </datalist>
+    </div>
   );
 }
 
@@ -222,14 +292,7 @@ export function TransactionDialog({
           category_id: kind === "transfer" ? null : text(d, "category_id"),
           description: text(d, "description"),
           notes: text(d, "notes"),
-          tags: [
-            ...new Set(
-              String(d.get("tags"))
-                .split(",")
-                .map((t) => t.trim().toLowerCase())
-                .filter(Boolean),
-            ),
-          ],
+          tags: [...new Set(String(d.get("tags")).split(",").map(normalizeTag).filter(Boolean))],
           location_name: text(d, "location_name"),
           latitude: coords?.lat ?? null,
           longitude: coords?.lng ?? null,
@@ -309,13 +372,8 @@ export function TransactionDialog({
       )}
       <Field>
         <FieldLabel htmlFor="tags">Etiquetas</FieldLabel>
-        <Input
-          id="tags"
-          name="tags"
-          placeholder="vacaciones, pareja"
-          defaultValue={initial?.tags?.join(", ")}
-        />
-        <FieldDescription>Separadas por coma.</FieldDescription>
+        <TagInput defaultValue={initial?.tags} />
+        <FieldDescription>Enter o coma para agregar.</FieldDescription>
       </Field>
       <Field>
         <FieldLabel htmlFor="location_name">Ubicación</FieldLabel>
