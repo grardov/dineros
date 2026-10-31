@@ -5,7 +5,6 @@ import {
   ArrowLeftRightIcon,
   ArrowUpRightIcon,
   InfoIcon,
-  MapPinIcon,
   WalletIcon,
 } from "lucide-react";
 import { useState } from "react";
@@ -17,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PlaceField } from "@/components/place-field";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -123,9 +123,6 @@ export function TransactionDialog({
   const initial: Partial<Transaction> | undefined = transaction ?? preset;
   const [kind, setKind] = useState<TransactionKind>(initial?.kind ?? initialKind);
   const [accountChoice, setAccountChoice] = useState(initial?.account_id ?? accountId ?? "");
-  const [coords, setCoords] = useState(
-    initial?.latitude != null ? { lat: initial.latitude, lng: initial.longitude! } : null,
-  );
   const accounts = store.accounts.filter(
     (a) =>
       !a.archived_at || a.id === transaction?.account_id || a.id === transaction?.to_account_id,
@@ -231,8 +228,8 @@ export function TransactionDialog({
             ),
           ],
           location_name: text(d, "location_name"),
-          latitude: coords?.lat ?? null,
-          longitude: coords?.lng ?? null,
+          latitude: num(d, "latitude"),
+          longitude: num(d, "longitude"),
         });
       }}
     >
@@ -319,34 +316,13 @@ export function TransactionDialog({
       </Field>
       <Field>
         <FieldLabel htmlFor="location_name">Ubicación</FieldLabel>
-        <div className="flex gap-2">
-          <Input
-            id="location_name"
-            name="location_name"
-            maxLength={200}
-            defaultValue={initial?.location_name ?? ""}
-          />
-          <Button
-            type="button"
-            variant={coords ? "secondary" : "outline"}
-            size="icon"
-            title={coords ? "Quitar ubicación" : "Usar mi ubicación"}
-            onClick={() =>
-              coords
-                ? setCoords(null)
-                : navigator.geolocation.getCurrentPosition((p) =>
-                    setCoords({ lat: p.coords.latitude, lng: p.coords.longitude }),
-                  )
-            }
-          >
-            <MapPinIcon className={coords ? "text-primary" : ""} />
-          </Button>
-        </div>
-        {coords && (
-          <FieldDescription>
-            {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
-          </FieldDescription>
-        )}
+        <PlaceField
+          name={initial?.location_name}
+          coords={
+            initial?.latitude != null ? { lat: initial.latitude, lng: initial.longitude! } : null
+          }
+          locateOnOpen={!initial}
+        />
       </Field>
       <Field>
         <FieldLabel htmlFor="notes">Notas</FieldLabel>
