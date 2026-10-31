@@ -205,104 +205,118 @@ export function PlaceField({
       ? "Sin resultados. Se guardará el nombre como lo escribiste."
       : null;
 
+  // Without permission there's no location to show, only how to give it.
+  const noPermission = geo === "denied" && !coords;
+
   return (
     <>
-      <Autocomplete.Root
-        items={results}
-        filter={null}
-        autoHighlight
-        value={place}
-        onValueChange={(value, { reason }) => {
-          setPlace(value);
-          if (reason === "input-change") onType(value);
-        }}
-        itemToStringValue={(p: Place) => p.label}
-      >
-        <div className="flex gap-2">
-          <Autocomplete.Input
-            id="location_name"
-            name="location_name"
-            maxLength={200}
-            placeholder={geo === "locating" ? "Buscando dónde estás…" : "Busca un lugar o escribe"}
-            render={<Input />}
-            // Enter picks the highlighted place; with none it shouldn't send the whole form.
-            onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
-          />
-          <Button
-            type="button"
-            variant={coords ? "secondary" : "outline"}
-            size="icon"
-            disabled={geo === "locating"}
-            title={coords ? "Quitar ubicación" : "Usar mi ubicación"}
-            aria-label={coords ? "Quitar ubicación" : "Usar mi ubicación"}
-            onClick={() => {
-              if (!coords) return locate();
-              setCoords(null);
-              setPlace("");
-            }}
-          >
-            {geo === "locating" ? (
-              <LoaderCircleIcon className="animate-spin" />
-            ) : (
-              <MapPinIcon className={coords ? "text-primary" : ""} />
-            )}
-          </Button>
-        </div>
-        <Autocomplete.Portal hidden={!status && !results.length}>
-          <Autocomplete.Positioner sideOffset={4} align="start" className="isolate z-50">
-            <Autocomplete.Popup
-              aria-busy={searching || undefined}
-              className="max-h-[min(var(--available-height),18rem)] w-(--anchor-width) max-w-(--available-width) overflow-y-auto overscroll-contain rounded-lg bg-popover p-1 text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10"
+      {noPermission ? (
+        // Keeps a name typed before tapping the pin.
+        <input type="hidden" name="location_name" value={place} />
+      ) : (
+        <Autocomplete.Root
+          items={results}
+          filter={null}
+          autoHighlight
+          value={place}
+          onValueChange={(value, { reason }) => {
+            setPlace(value);
+            if (reason === "input-change") onType(value);
+          }}
+          itemToStringValue={(p: Place) => p.label}
+        >
+          <div className="flex gap-2">
+            <Autocomplete.Input
+              id="location_name"
+              name="location_name"
+              maxLength={200}
+              placeholder={
+                geo === "locating" ? "Buscando dónde estás…" : "Busca un lugar o escribe"
+              }
+              render={<Input />}
+              // Enter picks the highlighted place; with none it shouldn't send the whole form.
+              onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+            />
+            <Button
+              type="button"
+              variant={coords ? "secondary" : "outline"}
+              size="icon"
+              disabled={geo === "locating"}
+              title={coords ? "Quitar ubicación" : "Usar mi ubicación"}
+              aria-label={coords ? "Quitar ubicación" : "Usar mi ubicación"}
+              onClick={() => {
+                if (!coords) return locate();
+                setCoords(null);
+                setPlace("");
+              }}
             >
-              <Autocomplete.Status>
-                {status && (
-                  <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground">
-                    {searching && <LoaderCircleIcon className="size-3.5 animate-spin" />}
-                    {status}
-                  </div>
-                )}
-              </Autocomplete.Status>
-              <Autocomplete.List>
-                {(p: Place) => (
-                  <Autocomplete.Item
-                    key={`${p.lat},${p.lng},${p.name}`}
-                    value={p}
-                    onClick={() => setCoords({ lat: p.lat, lng: p.lng })}
-                    className="flex cursor-default items-start gap-2 rounded-md px-2 py-1.5 outline-none select-none data-highlighted:bg-accent"
-                  >
-                    <MapPinIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-                    <span className="flex min-w-0 flex-col">
-                      <span className="truncate font-medium">{p.name}</span>
-                      {p.detail && (
-                        <span className="truncate text-xs text-muted-foreground">{p.detail}</span>
-                      )}
-                    </span>
-                  </Autocomplete.Item>
-                )}
-              </Autocomplete.List>
-            </Autocomplete.Popup>
-          </Autocomplete.Positioner>
-        </Autocomplete.Portal>
-      </Autocomplete.Root>
+              {geo === "locating" ? (
+                <LoaderCircleIcon className="animate-spin" />
+              ) : (
+                <MapPinIcon className={coords ? "text-primary" : ""} />
+              )}
+            </Button>
+          </div>
+          <Autocomplete.Portal hidden={!status && !results.length}>
+            <Autocomplete.Positioner sideOffset={4} align="start" className="isolate z-50">
+              <Autocomplete.Popup
+                aria-busy={searching || undefined}
+                className="max-h-[min(var(--available-height),18rem)] w-(--anchor-width) max-w-(--available-width) overflow-y-auto overscroll-contain rounded-lg bg-popover p-1 text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10"
+              >
+                <Autocomplete.Status>
+                  {status && (
+                    <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground">
+                      {searching && <LoaderCircleIcon className="size-3.5 animate-spin" />}
+                      {status}
+                    </div>
+                  )}
+                </Autocomplete.Status>
+                <Autocomplete.List>
+                  {(p: Place) => (
+                    <Autocomplete.Item
+                      key={`${p.lat},${p.lng},${p.name}`}
+                      value={p}
+                      onClick={() => setCoords({ lat: p.lat, lng: p.lng })}
+                      className="flex cursor-default items-start gap-2 rounded-md px-2 py-1.5 outline-none select-none data-highlighted:bg-accent"
+                    >
+                      <MapPinIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                      <span className="flex min-w-0 flex-col">
+                        <span className="truncate font-medium">{p.name}</span>
+                        {p.detail && (
+                          <span className="truncate text-xs text-muted-foreground">{p.detail}</span>
+                        )}
+                      </span>
+                    </Autocomplete.Item>
+                  )}
+                </Autocomplete.List>
+              </Autocomplete.Popup>
+            </Autocomplete.Positioner>
+          </Autocomplete.Portal>
+        </Autocomplete.Root>
+      )}
       <input type="hidden" name="latitude" value={coords?.lat ?? ""} />
       <input type="hidden" name="longitude" value={coords?.lng ?? ""} />
 
       {!coords && (geo === "denied" || geo === "failed") && (
-        <div className="flex items-start gap-2.5 rounded-lg bg-background px-3 py-2.5 text-[0.78rem] leading-snug text-sidebar-foreground">
+        <p className="flex items-start gap-2.5 rounded-lg bg-background px-3 py-2.5 text-[0.78rem] leading-snug text-sidebar-foreground">
           <MapPinOffIcon className="mt-px size-4 shrink-0 text-muted-foreground" />
-          <div className="flex flex-1 flex-col items-start gap-2">
+          <span>
             {geo === "failed"
-              ? "No pudimos saber dónde estás. Intenta otra vez o busca el lugar."
+              ? "No pudimos saber dónde estás. Intenta otra vez o busca el lugar. "
               : permission === "denied"
-                ? "Tu navegador tiene bloqueada la ubicación. Permítela desde el ícono a la izquierda de la dirección del sitio y aquí se toma sola. Mientras, puedes buscar el lugar."
-                : "Permite la ubicación para registrar dónde haces cada movimiento, o busca el lugar."}
-            {permission !== "denied" && (
-              <Button type="button" size="sm" variant="outline" onClick={locate}>
-                {geo === "failed" ? "Reintentar" : "Permitir ubicación"}
-              </Button>
-            )}
-          </div>
-        </div>
+                ? // A blocked permission can't be asked again from the page; trying still lights
+                  // up the browser's location icon next to the address.
+                  "Tu navegador tiene bloqueada la ubicación. Actívala desde el ícono a la izquierda de la dirección del sitio y aquí se toma sola. "
+                : "Permite la ubicación para registrar dónde haces cada movimiento. "}
+            <button
+              type="button"
+              onClick={locate}
+              className="font-medium text-primary underline underline-offset-2 hover:no-underline"
+            >
+              {geo === "failed" ? "Reintentar" : "Permitir ubicación"}
+            </button>
+          </span>
+        </p>
       )}
 
       {coords && (
